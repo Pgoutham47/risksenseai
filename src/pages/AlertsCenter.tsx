@@ -6,7 +6,7 @@ import { PageTransition } from '@/components/AnimatedComponents';
 
 const severityIcons: Record<AlertSeverity, React.ReactNode> = {
   CRITICAL: <AlertCircle className="w-5 h-5 text-destructive" />,
-  WARNING: <AlertTriangle className="w-5 h-5 text-primary" />,
+  WARNING: <AlertTriangle className="w-5 h-5 text-band-warning" />,
   INFO: <Info className="w-5 h-5 text-severity-info" />,
 };
 
@@ -35,28 +35,28 @@ const AlertsCenter: React.FC = () => {
     <PageTransition>
       <div className="space-y-5">
         {/* Summary Strip */}
-        <div className="flex gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {[
             { label: 'Unacknowledged', value: unack, color: 'text-destructive' },
-            { label: 'Escalated', value: escalated, color: 'text-primary' },
+            { label: 'Escalated', value: escalated, color: 'text-band-warning' },
             { label: 'Resolved Today', value: resolved, color: 'text-band-clear' },
           ].map(s => (
-            <div key={s.label} className="kpi-card flex-1 flex items-center gap-3">
-              <span className={`font-mono text-2xl ${s.color}`}>{s.value}</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider">{s.label}</span>
+            <div key={s.label} className="kpi-card flex items-center gap-3">
+              <span className={`font-mono text-2xl font-bold ${s.color}`}>{s.value}</span>
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{s.label}</span>
             </div>
           ))}
         </div>
 
         {/* Filters */}
         <div className="flex gap-3">
-          <select value={sevFilter} onChange={e => setSevFilter(e.target.value as any)} className="bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+          <select value={sevFilter} onChange={e => setSevFilter(e.target.value as any)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40">
             <option value="ALL">All Severity</option>
             <option value="CRITICAL">Critical</option>
             <option value="WARNING">Warning</option>
             <option value="INFO">Info</option>
           </select>
-          <select value={ackFilter} onChange={e => setAckFilter(e.target.value as any)} className="bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+          <select value={ackFilter} onChange={e => setAckFilter(e.target.value as any)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40">
             <option value="ALL">All Status</option>
             <option value="UNACK">Unacknowledged</option>
             <option value="ACK">Acknowledged</option>
@@ -72,20 +72,20 @@ const AlertsCenter: React.FC = () => {
             </div>
           )}
           {filtered.map(alert => (
-            <div key={alert.id} className={`panel p-5 flex gap-4 transition-opacity ${alert.acknowledged ? 'opacity-60' : ''}`}>
+            <div key={alert.id} className={`panel p-5 flex gap-4 transition-opacity ${alert.acknowledged ? 'opacity-50' : ''}`}>
               <div className="flex-shrink-0 mt-0.5">{severityIcons[alert.severity]}</div>
               <div className="flex-1 min-w-0 space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-heading text-sm tracking-wider text-foreground">{alert.agencyName}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground">{alert.agencyId}</span>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${alert.severity === 'CRITICAL' ? 'bg-destructive/15 text-destructive' : alert.severity === 'WARNING' ? 'bg-primary/15 text-primary' : 'bg-severity-info/15 text-severity-info'}`}>{alert.type}</span>
-                  {alert.escalated && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">ESCALATED</span>}
+                  <span className="font-mono text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">{alert.agencyId}</span>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${alert.severity === 'CRITICAL' ? 'bg-destructive/10 text-destructive' : alert.severity === 'WARNING' ? 'bg-band-warning/10 text-band-warning' : 'bg-severity-info/10 text-severity-info'}`}>{alert.type}</span>
+                  {alert.escalated && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-destructive/8 text-destructive">ESCALATED</span>}
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">{alert.description}</p>
                 <p className="text-[10px] font-mono text-muted-foreground">{alert.timestamp}</p>
               </div>
               <div className="flex flex-col gap-1.5 flex-shrink-0">
-                <button onClick={() => navigate(`/agency/${alert.agencyId}`)} className="flex items-center gap-1 text-[11px] text-primary hover:underline">
+                <button onClick={() => navigate(`/agency/${alert.agencyId}`)} className="flex items-center gap-1 text-[11px] text-primary font-medium hover:underline">
                   <Eye className="w-3 h-3" /> View
                 </button>
                 {!alert.acknowledged && (

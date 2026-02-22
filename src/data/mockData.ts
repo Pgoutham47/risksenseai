@@ -192,11 +192,11 @@ export function formatCurrency(val: number): string {
 
 export function getBandColor(band: Band): string {
   const colors: Record<Band, string> = {
-    CLEAR: 'hsl(142, 70%, 42%)',
-    CAUTION: 'hsl(45, 90%, 52%)',
-    WARNING: 'hsl(30, 85%, 50%)',
-    RESTRICTED: 'hsl(0, 65%, 55%)',
-    BLOCKED: 'hsl(0, 70%, 35%)',
+    CLEAR: 'hsl(152, 60%, 36%)',
+    CAUTION: 'hsl(38, 92%, 50%)',
+    WARNING: 'hsl(25, 95%, 53%)',
+    RESTRICTED: 'hsl(0, 72%, 51%)',
+    BLOCKED: 'hsl(0, 62%, 38%)',
   };
   return colors[band];
 }
