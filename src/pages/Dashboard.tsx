@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts';
-import { AlertTriangle, Activity, TrendingDown, TrendingUp, CreditCard, Zap, XCircle, Clock, Plane, FileText, ShieldAlert, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Activity, TrendingDown, TrendingUp, CreditCard, Zap, XCircle, Clock, Plane, FileText, ShieldAlert, CheckCircle, Globe, Server, UserCheck } from 'lucide-react';
 import { agencies, liveEvents, generateScoreHistory, generateHeatmapData, getBandClass, getBandColor, formatCurrency, type Band } from '@/data/mockData';
 import { AnimatedScore, PageTransition } from '@/components/AnimatedComponents';
 
@@ -69,7 +69,62 @@ const Dashboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Main Grid */}
+        {/* TBO Data Sources */}
+        <div className="panel p-5">
+          <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">TBO Data Sources</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                label: 'Staging API (SOAP)',
+                description: 'Live booking data ingestion — search, booking, cancellation, pricing',
+                icon: <Server className="w-5 h-5" />,
+                status: 'Connected',
+                statusColor: 'text-emerald-600',
+                dotColor: 'bg-emerald-500',
+                latency: '142ms',
+                lastSync: '2 min ago',
+              },
+              {
+                label: 'Web Portal',
+                description: 'Manual verification — bookings, cancellations, account history',
+                icon: <Globe className="w-5 h-5" />,
+                status: 'Active',
+                statusColor: 'text-emerald-600',
+                dotColor: 'bg-emerald-500',
+                latency: '—',
+                lastSync: 'Session active',
+              },
+              {
+                label: 'Dummy Agency',
+                description: 'Behavior simulation — realistic booking & cancellation patterns',
+                icon: <UserCheck className="w-5 h-5" />,
+                status: 'Simulating',
+                statusColor: 'text-amber-600',
+                dotColor: 'bg-amber-500 animate-pulse',
+                latency: '—',
+                lastSync: '14 events today',
+              },
+            ].map((source, i) => (
+              <div key={i} className="flex items-start gap-3.5 p-4 rounded-xl border border-border bg-secondary/30">
+                <div className="p-2.5 rounded-lg bg-primary/10 text-primary shrink-0">{source.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-semibold text-foreground">{source.label}</span>
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-medium ${source.statusColor}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${source.dotColor}`} />
+                      {source.status}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed mb-2">{source.description}</p>
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-mono">
+                    {source.latency !== '—' && <span>Latency: {source.latency}</span>}
+                    <span>{source.lastSync}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
