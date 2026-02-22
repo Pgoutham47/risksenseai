@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut } from 'lucide-react';
 import { alerts } from '@/data/mockData';
 
 const navItems = [
-  { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Agency Directory', path: '/agencies', icon: Building2 },
   { label: 'Alerts', path: '/alerts', icon: Bell, badge: true },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
@@ -26,7 +26,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }, [location.pathname]);
 
   const pageTitle = (() => {
-    if (location.pathname === '/') return 'Command Center';
+    if (location.pathname === '/dashboard') return 'Command Center';
     if (location.pathname === '/agencies') return 'Agency Directory';
     if (location.pathname.startsWith('/agency/')) return 'Agency Profile';
     if (location.pathname === '/alerts') return 'Alerts Center';
@@ -56,7 +56,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Nav */}
       <nav className="flex-1 py-3 space-y-0.5 px-2">
         {navItems.map(item => {
-          const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
+          const active = item.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(item.path);
           return (
             <button
               key={item.path}
@@ -86,6 +86,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {!collapsed && <span className="text-xs text-sidebar-foreground">API: Live</span>}
         </div>
         {!collapsed && <p className="text-[10px] text-sidebar-foreground/60">Last sync: 2 min ago</p>}
+        <button
+          onClick={() => navigate('/')}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-red-400 transition-colors"
+        >
+          <LogOut className="w-4 h-4 flex-shrink-0" />
+          {!collapsed && <span>Logout</span>}
+        </button>
         <button onClick={() => setCollapsed(!collapsed)} className="w-full hidden md:flex items-center justify-center py-1 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
