@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders } from 'lucide-react';
 import { alerts } from '@/data/mockData';
 import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
 import NotificationDrawer from '@/components/NotificationDrawer';
@@ -11,6 +11,7 @@ const navItems = [
   { label: 'Agency Directory', path: '/agencies', icon: Building2 },
   { label: 'Alerts', path: '/alerts', icon: Bell, badge: true },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
+  { label: 'Simulator', path: '/simulator', icon: Sliders },
   { label: 'Settings', path: '/settings', icon: Settings },
 ];
 
@@ -59,6 +60,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (location.pathname === '/alerts') return 'Alerts Center';
     if (location.pathname === '/analytics') return 'Analytics';
     if (location.pathname === '/settings') return 'Settings';
+    if (location.pathname === '/simulator') return 'Fraud Scenario Simulator';
     return 'RiskSense AI';
   })();
 
