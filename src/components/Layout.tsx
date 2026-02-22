@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Database } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut } from 'lucide-react';
 import { alerts } from '@/data/mockData';
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { label: 'Agency Directory', path: '/agencies', icon: Building2 },
-  { label: 'TBO Sources', path: '/tbo-sources', icon: Database },
   { label: 'Alerts', path: '/alerts', icon: Bell, badge: true },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Settings', path: '/settings', icon: Settings },
@@ -30,7 +29,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (location.pathname === '/dashboard') return 'Command Center';
     if (location.pathname === '/agencies') return 'Agency Directory';
     if (location.pathname.startsWith('/agency/')) return 'Agency Profile';
-    if (location.pathname === '/tbo-sources') return 'TBO Data Sources';
     if (location.pathname === '/alerts') return 'Alerts Center';
     if (location.pathname === '/analytics') return 'Analytics';
     if (location.pathname === '/settings') return 'Settings';

@@ -69,8 +69,7 @@ const Dashboard: React.FC = () => {
           ))}
         </div>
 
-
-
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">

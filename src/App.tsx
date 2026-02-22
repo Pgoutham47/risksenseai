@@ -13,7 +13,6 @@ import AgencyProfile from "@/pages/AgencyProfile";
 import AlertsCenter from "@/pages/AlertsCenter";
 import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
-import TBODataSources from "@/pages/TBODataSources";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,7 +32,6 @@ const App = () => (
             <Route path="/agency/:id" element={<Layout><AgencyProfile /></Layout>} />
             <Route path="/alerts" element={<Layout><AlertsCenter /></Layout>} />
             <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
-            <Route path="/tbo-sources" element={<Layout><TBODataSources /></Layout>} />
             <Route path="/settings" element={<Layout><Settings /></Layout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
