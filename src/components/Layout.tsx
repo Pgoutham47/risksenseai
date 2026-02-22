@@ -21,7 +21,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const unackAlerts = alerts.filter(a => !a.acknowledged).length;
 
-  // Close mobile sidebar on navigation
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
@@ -39,36 +38,37 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-5 border-b border-border">
-        <Shield className="w-7 h-7 text-primary flex-shrink-0" />
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
+        <div className="w-8 h-8 rounded-lg bg-sidebar-primary/10 flex items-center justify-center">
+          <Shield className="w-5 h-5 text-sidebar-primary" />
+        </div>
         {!collapsed && (
           <div className="flex flex-col">
-            <span className="font-heading text-base text-foreground tracking-wider">RISKSENSE</span>
-            <span className="text-[10px] text-primary font-mono tracking-widest">AI PLATFORM</span>
+            <span className="font-heading text-sm text-sidebar-primary tracking-wider">RiskSense</span>
+            <span className="text-[9px] text-sidebar-foreground font-mono tracking-widest">AI PLATFORM</span>
           </div>
         )}
-        {/* Mobile close button */}
-        <button onClick={() => setMobileOpen(false)} className="ml-auto md:hidden text-muted-foreground hover:text-foreground">
+        <button onClick={() => setMobileOpen(false)} className="ml-auto md:hidden text-sidebar-foreground hover:text-sidebar-primary">
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 space-y-1 px-2">
+      <nav className="flex-1 py-3 space-y-0.5 px-2">
         {navItems.map(item => {
           const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
           return (
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors relative ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all relative ${
                 active
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                  ? 'bg-sidebar-accent text-sidebar-primary font-semibold'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
               }`}
             >
               <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
-              {!collapsed && <span className="font-medium">{item.label}</span>}
+              {!collapsed && <span>{item.label}</span>}
               {item.badge && unackAlerts > 0 && (
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
                   {unackAlerts}
@@ -80,13 +80,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </nav>
 
       {/* Bottom */}
-      <div className="border-t border-border px-3 py-3 space-y-2">
+      <div className="border-t border-sidebar-border px-3 py-3 space-y-2">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-band-clear pulse-live" />
-          {!collapsed && <span className="text-xs text-muted-foreground">API: Live</span>}
+          {!collapsed && <span className="text-xs text-sidebar-foreground">API: Live</span>}
         </div>
-        {!collapsed && <p className="text-[10px] text-muted-foreground">Last sync: 2 min ago</p>}
-        <button onClick={() => setCollapsed(!collapsed)} className="w-full hidden md:flex items-center justify-center py-1 text-muted-foreground hover:text-foreground transition-colors">
+        {!collapsed && <p className="text-[10px] text-sidebar-foreground/60">Last sync: 2 min ago</p>}
+        <button onClick={() => setCollapsed(!collapsed)} className="w-full hidden md:flex items-center justify-center py-1 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
@@ -97,16 +97,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="flex h-screen w-full overflow-hidden bg-background">
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 bg-background/60 z-40 md:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar — desktop */}
-      <aside className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-200 ${collapsed ? 'w-16' : 'w-56'}`}>
+      <aside className={`hidden md:flex flex-col bg-sidebar transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
         {sidebarContent}
       </aside>
 
       {/* Sidebar — mobile drawer */}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-sidebar border-r border-border transform transition-transform duration-200 md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-sidebar shadow-2xl transform transition-transform duration-200 md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {sidebarContent}
       </aside>
 
@@ -136,7 +136,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     }
                   }}
                   placeholder="Search agencies..."
-                  className="bg-secondary border border-border rounded-md px-3 py-1.5 text-sm text-foreground w-40 md:w-56 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground w-40 md:w-56 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
                 />
               ) : (
                 <button onClick={() => setSearchOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -150,9 +150,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unackAlerts}</span>
               )}
             </button>
-            <div className="flex items-center gap-2 pl-2 border-l border-border">
-              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-2 pl-3 border-l border-border">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <User className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="hidden md:flex flex-col">
                 <span className="text-xs text-foreground font-medium">Admin</span>
@@ -163,7 +163,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
           {children}
         </main>
       </div>

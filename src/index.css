@@ -4,60 +4,70 @@
 
 @layer base {
   :root {
-    --background: 220 15% 8%;
-    --foreground: 210 20% 95%;
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
 
-    --card: 220 14% 11%;
-    --card-foreground: 210 20% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 220 14% 13%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 38 90% 55%;
-    --primary-foreground: 220 15% 8%;
+    --primary: 222 47% 25%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 220 12% 16%;
-    --secondary-foreground: 210 20% 85%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 12% 18%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 220 14% 93%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 38 90% 55%;
-    --accent-foreground: 220 15% 8%;
+    --accent: 220 14% 93%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 210 20% 95%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 12% 18%;
-    --input: 220 12% 20%;
-    --ring: 38 90% 55%;
+    --border: 220 13% 89%;
+    --input: 220 13% 89%;
+    --ring: 222 47% 25%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 220 16% 6%;
-    --sidebar-foreground: 215 15% 55%;
-    --sidebar-primary: 38 90% 55%;
-    --sidebar-primary-foreground: 220 15% 8%;
-    --sidebar-accent: 220 14% 12%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 12% 14%;
-    --sidebar-ring: 38 90% 55%;
+    --sidebar-background: 222 47% 15%;
+    --sidebar-foreground: 213 27% 74%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222 47% 15%;
+    --sidebar-accent: 222 40% 22%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 222 40% 22%;
+    --sidebar-ring: 210 40% 98%;
 
-    /* Risk band colors */
-    --band-clear: 142 70% 42%;
-    --band-caution: 45 90% 52%;
-    --band-warning: 30 85% 50%;
-    --band-restricted: 0 65% 55%;
-    --band-blocked: 0 70% 35%;
+    /* Risk band colors — tuned for light backgrounds */
+    --band-clear: 152 60% 36%;
+    --band-caution: 38 92% 50%;
+    --band-warning: 25 95% 53%;
+    --band-restricted: 0 72% 51%;
+    --band-blocked: 0 62% 38%;
 
     /* Severity colors */
-    --severity-critical: 0 65% 55%;
-    --severity-warning: 38 90% 55%;
-    --severity-info: 210 70% 55%;
+    --severity-critical: 0 72% 51%;
+    --severity-warning: 38 92% 50%;
+    --severity-info: 217 91% 60%;
+
+    /* Chart theming */
+    --chart-grid: 220 13% 91%;
+    --chart-axis: 220 13% 85%;
+    --chart-tick: 215 16% 47%;
+    --chart-tooltip-bg: 0 0% 100%;
+    --chart-tooltip-border: 220 13% 89%;
+    --chart-tooltip-text: 222 47% 11%;
+    --chart-line: 222 47% 25%;
+    --chart-heatmap: 222 47% 25%;
 
     /* Surface variations */
-    --surface-raised: 220 14% 14%;
-    --surface-overlay: 220 14% 10%;
+    --surface-raised: 0 0% 100%;
+    --surface-overlay: 220 20% 97%;
   }
 }
 
@@ -66,14 +76,14 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
   }
 }
 
@@ -87,45 +97,40 @@
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
   }
 
-  /* Band badge styles */
+  /* Band badge styles — professional pill badges */
   .band-clear {
-    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
-    background: hsl(var(--band-clear) / 0.15);
+    @apply text-[11px] font-semibold px-2.5 py-1 rounded-full;
+    background: hsl(var(--band-clear) / 0.1);
     color: hsl(var(--band-clear));
-    box-shadow: 0 0 8px hsl(var(--band-clear) / 0.2);
   }
   .band-caution {
-    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
-    background: hsl(var(--band-caution) / 0.15);
-    color: hsl(var(--band-caution));
-    box-shadow: 0 0 8px hsl(var(--band-caution) / 0.2);
+    @apply text-[11px] font-semibold px-2.5 py-1 rounded-full;
+    background: hsl(var(--band-caution) / 0.12);
+    color: hsl(var(--band-caution) / 0.85);
   }
   .band-warning {
-    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
-    background: hsl(var(--band-warning) / 0.15);
+    @apply text-[11px] font-semibold px-2.5 py-1 rounded-full;
+    background: hsl(var(--band-warning) / 0.1);
     color: hsl(var(--band-warning));
-    box-shadow: 0 0 8px hsl(var(--band-warning) / 0.2);
   }
   .band-restricted {
-    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
-    background: hsl(var(--band-restricted) / 0.15);
+    @apply text-[11px] font-semibold px-2.5 py-1 rounded-full;
+    background: hsl(var(--band-restricted) / 0.08);
     color: hsl(var(--band-restricted));
-    box-shadow: 0 0 8px hsl(var(--band-restricted) / 0.2);
   }
   .band-blocked {
-    @apply text-xs font-semibold px-2.5 py-0.5 rounded-full;
-    background: hsl(var(--band-blocked) / 0.15);
+    @apply text-[11px] font-semibold px-2.5 py-1 rounded-full;
+    background: hsl(var(--band-blocked) / 0.08);
     color: hsl(var(--band-blocked));
-    box-shadow: 0 0 8px hsl(var(--band-blocked) / 0.2);
-    animation: pulse-blocked 2s ease-in-out infinite;
+    animation: pulse-blocked 2.5s ease-in-out infinite;
   }
 
   @keyframes pulse-blocked {
-    0%, 100% { box-shadow: 0 0 8px hsl(var(--band-blocked) / 0.2); }
-    50% { box-shadow: 0 0 16px hsl(var(--band-blocked) / 0.4); }
+    0%, 100% { background: hsl(var(--band-blocked) / 0.08); }
+    50% { background: hsl(var(--band-blocked) / 0.16); }
   }
 
   /* Left border band indicators for table rows */
@@ -135,55 +140,57 @@
   .border-band-restricted { border-left: 3px solid hsl(var(--band-restricted)); }
   .border-band-blocked {
     border-left: 3px solid hsl(var(--band-blocked));
-    animation: pulse-border-blocked 2s ease-in-out infinite;
+    animation: pulse-border-blocked 2.5s ease-in-out infinite;
   }
 
   @keyframes pulse-border-blocked {
     0%, 100% { border-left-color: hsl(var(--band-blocked)); }
-    50% { border-left-color: hsl(0 70% 50%); }
+    50% { border-left-color: hsl(0 72% 51%); }
   }
 
-  /* KPI card glow */
+  /* KPI card — elevated with shadow */
   .kpi-card {
-    @apply rounded-lg p-5;
+    @apply rounded-xl p-5;
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
-    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.04);
+    transition: box-shadow 0.2s, border-color 0.2s;
   }
   .kpi-card:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.08);
+    border-color: hsl(var(--primary) / 0.2);
+    box-shadow: 0 4px 12px -2px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.04);
   }
 
-  /* Panel styling */
+  /* Panel styling — clean cards with subtle shadow */
   .panel {
-    @apply rounded-lg;
+    @apply rounded-xl;
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.04), 0 1px 2px -1px hsl(0 0% 0% / 0.04);
   }
 
   /* Severity dots */
   .severity-dot {
     @apply w-2 h-2 rounded-full inline-block;
   }
-  .severity-critical { background: hsl(var(--severity-critical)); box-shadow: 0 0 6px hsl(var(--severity-critical) / 0.5); }
-  .severity-warning { background: hsl(var(--severity-warning)); box-shadow: 0 0 6px hsl(var(--severity-warning) / 0.5); }
-  .severity-info { background: hsl(var(--severity-info)); box-shadow: 0 0 6px hsl(var(--severity-info) / 0.5); }
+  .severity-critical { background: hsl(var(--severity-critical)); }
+  .severity-warning { background: hsl(var(--severity-warning)); }
+  .severity-info { background: hsl(var(--severity-info)); }
 
-  /* Scrollbar styling */
+  /* Scrollbar styling — subtle for light theme */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: hsl(var(--background));
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted));
+    background: hsl(var(--muted-foreground) / 0.2);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(var(--muted-foreground) / 0.35);
   }
 
   /* Pulsing indicator */

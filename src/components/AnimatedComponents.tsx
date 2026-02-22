@@ -37,14 +37,14 @@ export const SignalGauge: React.FC<SignalGaugeProps> = ({ score, size = 56 }) =>
   const radius = (size - 8) / 2;
   const circumference = Math.PI * radius;
   const offset = circumference * (1 - score);
-  const color = score >= 0.7 ? 'hsl(0, 65%, 55%)' : score >= 0.4 ? 'hsl(38, 90%, 55%)' : 'hsl(142, 70%, 42%)';
+  const color = score >= 0.7 ? 'hsl(0, 72%, 51%)' : score >= 0.4 ? 'hsl(38, 92%, 50%)' : 'hsl(152, 60%, 36%)';
 
   return (
     <svg width={size} height={size / 2 + 8} viewBox={`0 0 ${size} ${size / 2 + 8}`}>
       <path
         d={`M 4 ${size / 2 + 4} A ${radius} ${radius} 0 0 1 ${size - 4} ${size / 2 + 4}`}
         fill="none"
-        stroke="hsl(220, 12%, 18%)"
+        stroke="hsl(220, 13%, 91%)"
         strokeWidth="4"
         strokeLinecap="round"
       />
