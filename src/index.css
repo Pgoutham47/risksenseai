@@ -69,6 +69,67 @@
     --surface-raised: 0 0% 100%;
     --surface-overlay: 220 20% 97%;
   }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 92%;
+
+    --card: 222 40% 11%;
+    --card-foreground: 210 40% 92%;
+
+    --popover: 222 40% 11%;
+    --popover-foreground: 210 40% 92%;
+
+    --primary: 210 60% 55%;
+    --primary-foreground: 222 47% 8%;
+
+    --secondary: 222 30% 16%;
+    --secondary-foreground: 210 40% 85%;
+
+    --muted: 222 30% 16%;
+    --muted-foreground: 215 16% 55%;
+
+    --accent: 222 30% 18%;
+    --accent-foreground: 210 40% 92%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 210 60% 55%;
+
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 213 27% 65%;
+    --sidebar-primary: 210 60% 70%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 40% 12%;
+    --sidebar-accent-foreground: 210 40% 90%;
+    --sidebar-border: 222 30% 14%;
+    --sidebar-ring: 210 60% 70%;
+
+    --band-clear: 152 55% 42%;
+    --band-caution: 38 85% 55%;
+    --band-warning: 25 90% 58%;
+    --band-restricted: 0 68% 55%;
+    --band-blocked: 0 58% 45%;
+
+    --severity-critical: 0 68% 55%;
+    --severity-warning: 38 85% 55%;
+    --severity-info: 217 85% 65%;
+
+    --chart-grid: 222 30% 18%;
+    --chart-axis: 222 30% 22%;
+    --chart-tick: 215 16% 55%;
+    --chart-tooltip-bg: 222 40% 11%;
+    --chart-tooltip-border: 222 30% 18%;
+    --chart-tooltip-text: 210 40% 92%;
+    --chart-line: 210 60% 55%;
+    --chart-heatmap: 210 60% 55%;
+
+    --surface-raised: 222 40% 12%;
+    --surface-overlay: 222 47% 9%;
+  }
 }
 
 @layer base {
