@@ -60,7 +60,7 @@ const AgencyDirectory: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="panel overflow-hidden">
+        <div className="panel overflow-hidden overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-secondary/50 text-muted-foreground">

@@ -91,7 +91,7 @@ const AgencyProfile: React.FC = () => {
         {nextBandUp && (
           <div className="panel p-5 border-l-4" style={{ borderLeftColor: getBandColor(nextBandUp.band) }}>
             <h3 className="font-heading text-sm tracking-wider text-foreground mb-3">Recovery Guidance — Move from {agency.band} → {nextBandUp.band}</h3>
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               {agency.signals.filter(s => s.score > 0.3).slice(0, 3).map(s => (
                 <div key={s.id} className="flex items-center justify-between bg-secondary/50 rounded-md p-3">
                   <div>
@@ -113,7 +113,7 @@ const AgencyProfile: React.FC = () => {
         {/* Signal Score Cards */}
         <div>
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">Signal Scores</h3>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {agency.signals.map(s => (
               <div key={s.id} className="panel p-4 space-y-2">
                 <div className="flex items-center justify-between">

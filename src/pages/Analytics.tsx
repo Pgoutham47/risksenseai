@@ -106,7 +106,7 @@ const Analytics: React.FC = () => {
         {/* Section 3 — Cohort Comparison */}
         <div className="panel p-5">
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">Cohort Comparison</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {cohortData.map(c => (
               <div key={c.cohort} className="bg-secondary/40 rounded-lg p-4 space-y-3">
                 <h4 className="font-heading text-xs tracking-wider text-foreground">{c.cohort}</h4>

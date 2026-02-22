@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
     <PageTransition>
       <div className="space-y-6">
         {/* KPI Bar */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {[
             { label: 'Agencies Monitored', value: agencies.length, icon: <Activity className="w-5 h-5 text-primary" /> },
             { label: 'Warning or Worse', value: warningOrWorse, icon: <AlertTriangle className="w-5 h-5 text-destructive" />, danger: true },
@@ -66,7 +66,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Donut */}
