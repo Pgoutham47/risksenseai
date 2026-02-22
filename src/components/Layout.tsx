@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun } from 'lucide-react';
 import { alerts } from '@/data/mockData';
+import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
+import NotificationDrawer from '@/components/NotificationDrawer';
+import { toast } from '@/hooks/use-toast';
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -30,6 +33,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
+
+  const { unreadCount } = useNotifications();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useNotificationListener((n) => {
+    const variant = n.severity === 'CRITICAL' ? 'destructive' : 'default';
+    toast({
+      title: n.title,
+      description: n.message,
+      variant,
+    });
+  });
 
   const unackAlerts = alerts.filter(a => !a.acknowledged).length;
 
@@ -170,10 +185,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </button>
               )}
             </div>
-            <button onClick={() => navigate('/alerts')} className="relative text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => setDrawerOpen(true)} className="relative text-muted-foreground hover:text-foreground transition-colors">
               <Bell className="w-[18px] h-[18px]" />
-              {unackAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unackAlerts}</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
               )}
             </button>
             <div className="flex items-center gap-2 pl-3 border-l border-border">
@@ -193,6 +208,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {children}
         </main>
       </div>
+      <NotificationDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 };
