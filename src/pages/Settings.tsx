@@ -53,7 +53,7 @@ const Settings: React.FC = () => {
         {/* Band Thresholds */}
         <div className="panel p-5">
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">Decision Band Thresholds</h3>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {(Object.keys(thresholds) as (keyof typeof thresholds)[]).map(band => (
               <div key={band} className="space-y-1.5">
                 <label className="text-xs text-muted-foreground">{band} ≤</label>
