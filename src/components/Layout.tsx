@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun } from 'lucide-react';
 import { alerts } from '@/data/mockData';
 
 const navItems = [
@@ -18,6 +18,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') === 'dark' || 
+        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   const unackAlerts = alerts.filter(a => !a.acknowledged).length;
 
@@ -87,8 +99,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
         {!collapsed && <p className="text-[10px] text-sidebar-foreground/60">Last sync: 2 min ago</p>}
         <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
+        >
+          {darkMode ? <Sun className="w-4 h-4 flex-shrink-0" /> : <Moon className="w-4 h-4 flex-shrink-0" />}
+          {!collapsed && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
+        </button>
+        <button
           onClick={() => navigate('/')}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-red-400 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-destructive transition-colors"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Logout</span>}
