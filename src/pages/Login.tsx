@@ -22,7 +22,7 @@ const Login: React.FC = () => {
     <div className="min-h-screen bg-background flex">
       {/* Left branding */}
       <div className="hidden lg:flex flex-col justify-between flex-1 p-12 xl:p-16 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, hsl(222 47% 15%), hsl(222 47% 22%))' }}>
+        style={{ background: 'linear-gradient(135deg, hsl(25 30% 12%), hsl(25 25% 18%))' }}>
         <div className="absolute inset-0 opacity-[0.03]"
           style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
         <div className="relative z-10">
