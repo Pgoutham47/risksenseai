@@ -78,6 +78,10 @@ export default {
           raised: "hsl(var(--surface-raised))",
           overlay: "hsl(var(--surface-overlay))",
         },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          soft: "hsl(var(--gold-soft))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
