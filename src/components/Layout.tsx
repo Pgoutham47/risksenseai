@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders, ClipboardList, FileText } from 'lucide-react';
 import { alerts } from '@/data/mockData';
 import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
 import NotificationDrawer from '@/components/NotificationDrawer';
@@ -13,6 +13,7 @@ const navItems = [
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Simulator', path: '/simulator', icon: Sliders },
   { label: 'Audit Log', path: '/audit-log', icon: ClipboardList },
+  { label: 'Reports', path: '/reports', icon: FileText },
   { label: 'Settings', path: '/settings', icon: Settings },
 ];
 
@@ -63,6 +64,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (location.pathname === '/settings') return 'Settings';
     if (location.pathname === '/simulator') return 'Fraud Scenario Simulator';
     if (location.pathname === '/audit-log') return 'Audit Log';
+    if (location.pathname === '/reports') return 'Report Builder';
     return 'RiskSense AI';
   })();
 
