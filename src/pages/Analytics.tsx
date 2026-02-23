@@ -47,9 +47,9 @@ const settlementTrend = Array.from({ length: 30 }, (_, i) => {
   return { date: d.toISOString().slice(5, 10), avgDelay: Math.round((3 + Math.sin(i / 5) * 1.5 + Math.random()) * 10) / 10 };
 });
 
-const chartTickStyle = { fill: 'hsl(215, 16%, 47%)', fontSize: 10 };
-const chartAxisStyle = { stroke: 'hsl(220, 13%, 89%)' };
-const chartTooltipStyle = { background: 'hsl(0, 0%, 100%)', border: '1px solid hsl(220, 13%, 89%)', borderRadius: 8, fontSize: 11, color: 'hsl(222, 47%, 11%)', boxShadow: '0 4px 12px hsl(0 0% 0% / 0.08)' };
+const chartTickStyle = { fill: 'hsl(25, 15%, 50%)', fontSize: 10 };
+const chartAxisStyle = { stroke: 'hsl(25, 15%, 85%)' };
+const chartTooltipStyle = { background: 'hsl(30, 20%, 98%)', border: '1px solid hsl(25, 15%, 85%)', borderRadius: 8, fontSize: 11, color: 'hsl(25, 30%, 12%)', boxShadow: '0 4px 12px hsl(25 20% 20% / 0.08)' };
 
 const Analytics: React.FC = () => {
   return (
@@ -60,11 +60,11 @@ const Analytics: React.FC = () => {
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Fraud Type Breakdown</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={fraudTypeData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(25, 15%, 90%)" horizontal={false} />
               <XAxis type="number" tick={chartTickStyle} axisLine={chartAxisStyle} />
               <YAxis type="category" dataKey="type" width={140} tick={chartTickStyle} axisLine={chartAxisStyle} />
               <Tooltip contentStyle={chartTooltipStyle} />
-              <Bar dataKey="count" fill="hsl(222, 47%, 25%)" radius={[0, 4, 4, 0]} barSize={24} />
+              <Bar dataKey="count" fill="hsl(38, 60%, 50%)" radius={[0, 4, 4, 0]} barSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -136,7 +136,7 @@ const Analytics: React.FC = () => {
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Credit Exposure by Band</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={creditByBand}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(25, 15%, 90%)" />
               <XAxis dataKey="band" tick={chartTickStyle} axisLine={chartAxisStyle} />
               <YAxis tickFormatter={v => formatCurrency(v)} tick={chartTickStyle} axisLine={chartAxisStyle} />
               <Tooltip contentStyle={chartTooltipStyle} formatter={(v: number) => formatCurrency(v)} />
@@ -154,11 +154,11 @@ const Analytics: React.FC = () => {
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Settlement Delay Trend — 30 Days</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={settlementTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(25, 15%, 90%)" />
               <XAxis dataKey="date" tick={chartTickStyle} axisLine={chartAxisStyle} />
-              <YAxis tick={chartTickStyle} axisLine={chartAxisStyle} label={{ value: 'Avg Days', angle: -90, position: 'insideLeft', fill: 'hsl(215, 16%, 47%)', fontSize: 10 }} />
+              <YAxis tick={chartTickStyle} axisLine={chartAxisStyle} label={{ value: 'Avg Days', angle: -90, position: 'insideLeft', fill: 'hsl(25, 15%, 50%)', fontSize: 10 }} />
               <Tooltip contentStyle={chartTooltipStyle} />
-              <Line type="monotone" dataKey="avgDelay" stroke="hsl(222, 47%, 25%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="avgDelay" stroke="hsl(38, 60%, 50%)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
