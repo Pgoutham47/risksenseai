@@ -72,13 +72,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-lg bg-sidebar-primary/10 flex items-center justify-center">
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center shadow-sm">
           <Shield className="w-5 h-5 text-sidebar-primary" />
         </div>
         {!collapsed && (
           <div className="flex flex-col">
             <span className="font-heading text-sm text-sidebar-primary tracking-wider">RiskSense</span>
-            <span className="text-[9px] text-sidebar-foreground font-mono tracking-widest">AI PLATFORM</span>
+            <span className="text-[9px] text-gold-soft font-mono tracking-widest">AI PLATFORM</span>
           </div>
         )}
         <button onClick={() => setMobileOpen(false)} className="ml-auto md:hidden text-sidebar-foreground hover:text-sidebar-primary">
@@ -94,10 +94,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all relative ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 relative group ${
                 active
-                  ? 'bg-sidebar-accent text-sidebar-primary font-semibold'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
+                  ? 'bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm border-l-2 border-gold/60'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground border-l-2 border-transparent'
               }`}
             >
               <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
@@ -114,11 +114,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* Bottom */}
       <div className="border-t border-sidebar-border px-3 py-3 space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-1">
           <span className="w-2 h-2 rounded-full bg-band-clear pulse-live" />
           {!collapsed && <span className="text-xs text-sidebar-foreground">API: Live</span>}
         </div>
-        {!collapsed && <p className="text-[10px] text-sidebar-foreground/60">Last sync: 2 min ago</p>}
+        {!collapsed && <p className="text-[10px] text-sidebar-foreground/50 px-1">Last sync: 2 min ago</p>}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
@@ -160,7 +160,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 bg-card flex-shrink-0">
+        <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 bg-card flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileOpen(true)} className="md:hidden text-muted-foreground hover:text-foreground">
               <Menu className="w-5 h-5" />

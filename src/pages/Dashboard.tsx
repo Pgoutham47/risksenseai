@@ -35,9 +35,9 @@ const iconMap: Record<string, React.ReactNode> = {
 const totalExposure = agencies.reduce((s, a) => s + a.outstandingBalance, 0);
 const warningOrWorse = agencies.filter(a => ['WARNING', 'RESTRICTED', 'BLOCKED'].includes(a.band)).length;
 
-const chartTickStyle = { fill: 'hsl(215, 16%, 47%)', fontSize: 10 };
-const chartAxisStyle = { stroke: 'hsl(220, 13%, 89%)' };
-const chartTooltipStyle = { background: 'hsl(0, 0%, 100%)', border: '1px solid hsl(220, 13%, 89%)', borderRadius: 8, fontSize: 12, color: 'hsl(222, 47%, 11%)', boxShadow: '0 4px 12px hsl(0 0% 0% / 0.08)' };
+const chartTickStyle = { fill: 'hsl(20, 10%, 46%)', fontSize: 10 };
+const chartAxisStyle = { stroke: 'hsl(30, 15%, 88%)' };
+const chartTooltipStyle = { background: 'hsl(30, 25%, 99%)', border: '1px solid hsl(30, 15%, 88%)', borderRadius: 10, fontSize: 12, color: 'hsl(20, 25%, 10%)', boxShadow: '0 4px 16px hsl(25 30% 15% / 0.1)' };
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -53,9 +53,9 @@ const Dashboard: React.FC = () => {
             { label: 'Alerts (24h)', value: 8, icon: <Zap className="w-5 h-5 text-primary" /> },
             { label: 'Credit Exposure', value: formatCurrency(totalExposure), icon: <CreditCard className="w-5 h-5 text-primary" />, isString: true },
           ].map((kpi, i) => (
-            <div key={i} className="kpi-card flex items-start justify-between">
+            <div key={i} className="kpi-card flex items-start justify-between" style={{ animationDelay: `${i * 80}ms` }}>
               <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium mb-1.5">{kpi.label}</p>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium mb-2">{kpi.label}</p>
                 {kpi.isString ? (
                   <p className="font-mono text-2xl text-foreground font-bold">{kpi.value}</p>
                 ) : (
@@ -64,7 +64,7 @@ const Dashboard: React.FC = () => {
                   </p>
                 )}
               </div>
-              <div className="p-2.5 rounded-lg bg-secondary">{kpi.icon}</div>
+              <div className="p-2.5 rounded-xl bg-accent/10 text-accent">{kpi.icon}</div>
             </div>
           ))}
         </div>
@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
                 </thead>
                 <tbody>
                   {topAtRisk.map(a => (
-                    <tr key={a.id} className="border-b border-border/50 hover:bg-secondary/50 cursor-pointer transition-colors" onClick={() => navigate(`/agency/${a.id}`)}>
+                    <tr key={a.id} className="border-b border-border/50 premium-row cursor-pointer" onClick={() => navigate(`/agency/${a.id}`)}>
                       <td className="py-2.5 text-foreground font-medium">{a.name}</td>
                       <td className="text-center font-mono text-foreground font-semibold">{a.trustScore}</td>
                       <td className="text-center"><span className={getBandClass(a.band)}>{a.band}</span></td>
@@ -166,7 +166,7 @@ const Dashboard: React.FC = () => {
                           const opacity = Math.min(val / 5, 1);
                           return (
                             <td key={di} className="p-0.5">
-                              <div className="w-full h-6 rounded" style={{ background: `hsl(222, 47%, 25%, ${opacity * 0.6 + 0.04})` }} title={`${val} agencies`} />
+                              <div className="w-full h-6 rounded transition-colors duration-200" style={{ background: `hsl(38, 60%, 50%, ${opacity * 0.55 + 0.04})` }} title={`${val} agencies`} />
                             </td>
                           );
                         })}
@@ -184,13 +184,13 @@ const Dashboard: React.FC = () => {
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Score Movement Timeline — 30 Days</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={scoreHistory}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 12%, 91%)" />
               <XAxis dataKey="date" tick={chartTickStyle} axisLine={chartAxisStyle} />
               <YAxis domain={[30, 80]} tick={chartTickStyle} axisLine={chartAxisStyle} />
               <Tooltip contentStyle={chartTooltipStyle} />
-              <Line type="monotone" dataKey="avgScore" stroke="hsl(222, 47%, 25%)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="avgScore" stroke="hsl(38, 60%, 50%)" strokeWidth={2.5} dot={false} />
               {scoreHistory.filter(d => d.event).map((d, i) => (
-                <ReferenceLine key={i} x={d.date} stroke="hsl(0, 72%, 51%)" strokeDasharray="4 4" label={{ value: d.event, position: 'top', fill: 'hsl(215, 16%, 47%)', fontSize: 9 }} />
+                <ReferenceLine key={i} x={d.date} stroke="hsl(0, 68%, 50%)" strokeDasharray="4 4" label={{ value: d.event, position: 'top', fill: 'hsl(20, 10%, 46%)', fontSize: 9 }} />
               ))}
             </LineChart>
           </ResponsiveContainer>
