@@ -16,6 +16,7 @@ import Analytics from "@/pages/Analytics";
 import Settings from "@/pages/Settings";
 import Simulator from "@/pages/Simulator";
 import AuditLog from "@/pages/AuditLog";
+import ReportBuilder from "@/pages/ReportBuilder";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/settings" element={<Layout><Settings /></Layout>} />
               <Route path="/simulator" element={<Layout><Simulator /></Layout>} />
               <Route path="/audit-log" element={<Layout><AuditLog /></Layout>} />
+              <Route path="/reports" element={<Layout><ReportBuilder /></Layout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AnimatePresence>
