@@ -21,7 +21,7 @@ const LandingProblem: React.FC = () => (
   <section className="relative py-24 md:py-32" style={{ background: colors.bgSlate }}>
     <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
       <motion.div {...fadeUp(0)} className="text-center mb-16">
-        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.02em' }}>
+        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.04em' }}>
           The Gap That Costs Platforms Everything
         </h2>
         <p className="mt-4 max-w-2xl mx-auto" style={{ fontFamily: fonts.body, fontSize: 18, color: colors.muted, lineHeight: 1.7 }}>
@@ -40,8 +40,9 @@ const LandingProblem: React.FC = () => (
               <div>
                 <h3 style={{ fontFamily: fonts.body, fontSize: 18, fontWeight: 700, color: colors.amber }}>{p.name}</h3>
                 <p className="mt-2" style={{ fontFamily: fonts.body, fontSize: 14, color: colors.mutedLight, lineHeight: 1.6 }}>{p.desc}</p>
-                <p className="mt-3 text-xs" style={{ fontFamily: fonts.mono, color: colors.danger }}>
-                  Loss: {p.loss}
+                <p className="mt-3 text-xs" style={{ fontFamily: fonts.mono }}>
+                  <span style={{ color: colors.danger, fontWeight: 700 }}>Loss:</span>{' '}
+                  <span style={{ color: colors.mutedLight }}>{p.loss}</span>
                 </p>
               </div>
             </div>
@@ -49,8 +50,8 @@ const LandingProblem: React.FC = () => (
         ))}
       </div>
 
-      <motion.div {...fadeUp(0.4)} className="mt-10 rounded-xl p-5 text-center" style={{ background: colors.amber, color: colors.bg }}>
-        <p style={{ fontFamily: fonts.body, fontSize: 16, fontWeight: 700, lineHeight: 1.6 }}>
+      <motion.div {...fadeUp(0.4)} className="mt-10 rounded-xl py-8 px-6 md:px-10 text-center" style={{ background: colors.amber, color: colors.bg }}>
+        <p style={{ fontFamily: fonts.body, fontSize: 17, fontWeight: 700, lineHeight: 1.7 }}>
           Current systems have no mechanism to detect any of this in real time. RiskSense AI is built to fix exactly that.
         </p>
       </motion.div>

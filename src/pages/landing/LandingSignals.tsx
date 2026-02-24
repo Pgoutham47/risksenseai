@@ -37,7 +37,7 @@ const ProgressBar: React.FC<{ risk: number; color: string }> = ({ risk, color })
     return () => obs.disconnect();
   }, [risk]);
   return (
-    <div ref={ref} className="w-full h-1.5 rounded-full mt-3" style={{ background: colors.border }}>
+    <div ref={ref} className="w-full h-1.5 rounded-full mt-4" style={{ background: colors.border }}>
       <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${width}%`, background: color }} />
     </div>
   );
@@ -47,7 +47,7 @@ const LandingSignals: React.FC = () => (
   <section className="relative py-24 md:py-32" style={{ background: colors.bgSlate }}>
     <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
       <motion.div {...fadeUp(0)} className="text-center mb-16">
-        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.02em' }}>
+        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.04em' }}>
           Eight Signals. Four Fraud Types. Zero Blind Spots.
         </h2>
       </motion.div>
@@ -59,11 +59,11 @@ const LandingSignals: React.FC = () => (
             <motion.div key={i} {...fadeUp(0.05 * i)} className="rounded-xl border p-5 group hover:-translate-y-1 transition-transform duration-300" style={{ background: colors.bgCard, borderColor: colors.border }}>
               <div className="flex items-center justify-between mb-3">
                 <span className="px-2 py-0.5 rounded font-bold" style={{ fontFamily: fonts.mono, fontSize: 11, background: `${colors.amber}15`, color: colors.amber }}>{s.id}</span>
-                <span style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted }}>{s.weight} weight</span>
+                <span className="px-2 py-0.5 rounded" style={{ fontFamily: fonts.mono, fontSize: 10, background: `${colors.amber}12`, color: colors.amber, fontWeight: 600 }}>{s.weight}</span>
               </div>
               <h3 style={{ fontFamily: fonts.body, fontSize: 15, fontWeight: 700, color: colors.white }}>{s.name}</h3>
               <span className="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-semibold" style={{ background: `${fColor}18`, color: fColor, fontFamily: fonts.mono }}>{s.fraud}</span>
-              <p className="mt-3" style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 1.6 }}>{s.desc}</p>
+              <p className="mt-3" style={{ fontFamily: fonts.body, fontSize: 12, color: colors.mutedLight, lineHeight: 1.65 }}>{s.desc}</p>
               <ProgressBar risk={s.risk} color={fColor} />
             </motion.div>
           );

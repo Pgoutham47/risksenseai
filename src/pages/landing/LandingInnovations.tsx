@@ -34,7 +34,7 @@ const LandingInnovations: React.FC = () => (
   <section className="relative py-24 md:py-32" style={{ background: colors.bgSlate }}>
     <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
       <motion.div {...fadeUp(0)} className="text-center mb-16">
-        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.02em' }}>
+        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.04em' }}>
           Beyond Detection. Built for the Real World.
         </h2>
       </motion.div>
@@ -45,8 +45,8 @@ const LandingInnovations: React.FC = () => (
             <span className="inline-block mb-5 text-3xl font-bold" style={{ fontFamily: fonts.headline, color: colors.amber, letterSpacing: '0.05em' }}>{item.num}</span>
             <h3 className="mb-4" style={{ fontFamily: fonts.body, fontSize: 20, fontWeight: 700, color: colors.white }}>{item.title}</h3>
             <p className="mb-6 flex-1" style={{ fontFamily: fonts.body, fontSize: 14, color: colors.mutedLight, lineHeight: 1.7 }}>{item.desc}</p>
-            <div className="rounded-lg p-4" style={{ background: `${colors.amber}08`, border: `1px solid ${colors.borderAmber}` }}>
-              <p style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.amber, lineHeight: 1.6 }}>"{item.callout}"</p>
+            <div className="rounded-lg p-4 flex gap-3" style={{ borderLeft: `3px solid ${colors.amber}`, background: `${colors.amber}08` }}>
+              <p style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.amber, lineHeight: 1.6, fontStyle: 'italic' }}>"{item.callout}"</p>
             </div>
           </motion.div>
         ))}
