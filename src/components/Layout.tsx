@@ -168,6 +168,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const dd = document.getElementById('profile-dropdown');
+      if (dd && !dd.classList.contains('hidden') && !(e.target as HTMLElement)?.closest('.relative.group')) {
+        dd.classList.add('hidden');
+      }
+    };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, []);
+
   const { unreadCount } = useNotifications();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -364,13 +376,60 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 pl-3 border-l border-border">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm">
-                  <User className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div className="hidden md:flex flex-col">
-                  <span className="text-xs text-foreground font-medium">Admin</span>
-                  <span className="text-[10px] text-muted-foreground">Risk Officer</span>
+              <div className="relative group">
+                <button
+                  className="flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity"
+                  onClick={() => {
+                    const el = document.getElementById('profile-dropdown');
+                    if (el) el.classList.toggle('hidden');
+                  }}
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm">
+                    <User className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <div className="hidden md:flex flex-col text-left">
+                    <span className="text-xs text-foreground font-medium">Admin</span>
+                    <span className="text-[10px] text-muted-foreground">Risk Officer</span>
+                  </div>
+                </button>
+                <div id="profile-dropdown" className="hidden absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="p-4 border-b border-border bg-secondary/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <User className="w-5 h-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Admin User</p>
+                        <p className="text-[11px] text-muted-foreground">Risk Officer · Level 3</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">admin@risksense.ai</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-2 space-y-0.5">
+                    <button
+                      onClick={() => { navigate('/settings'); document.getElementById('profile-dropdown')?.classList.add('hidden'); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-secondary/60 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-muted-foreground" />
+                      Settings & Preferences
+                    </button>
+                    <button
+                      onClick={() => { navigate('/audit-log'); document.getElementById('profile-dropdown')?.classList.add('hidden'); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-secondary/60 transition-colors"
+                    >
+                      <ClipboardList className="w-4 h-4 text-muted-foreground" />
+                      My Activity Log
+                    </button>
+                  </div>
+                  <div className="border-t border-border p-2">
+                    <button
+                      onClick={() => { navigate('/'); document.getElementById('profile-dropdown')?.classList.add('hidden'); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
