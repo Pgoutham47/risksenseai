@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Monitor, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command, Wifi, Clock, Rows3, Rows4 } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Monitor, CheckCircle, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command, Wifi, Clock, Rows3, Rows4 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { alerts, agencies } from '@/data/mockData';
 import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
@@ -131,6 +131,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [density, setDensity] = useState<'comfortable' | 'compact'>(() => {
     return (localStorage.getItem('ui-density') as any) || 'comfortable';
   });
@@ -251,24 +252,43 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {!collapsed && <span className="text-xs text-sidebar-foreground">API: Live</span>}
         </div>
         {!collapsed && <p className="text-[10px] text-sidebar-foreground/50 px-1">Last sync: 2 min ago</p>}
-        <button
-          onClick={() => {
-            const cycle = { light: 'dark' as const, dark: 'system' as const, system: 'light' as const };
-            setThemeMode(cycle[themeMode]);
-          }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
-          title={`Theme: ${themeMode}`}
-        >
-          <div className="flex items-center gap-2">
-            {themeMode === 'dark' ? <Moon className="w-4 h-4 flex-shrink-0" /> : themeMode === 'light' ? <Sun className="w-4 h-4 flex-shrink-0" /> : <Monitor className="w-4 h-4 flex-shrink-0" />}
-            {!collapsed && (
-              <span className="capitalize">{themeMode === 'system' ? 'Auto' : themeMode}</span>
-            )}
-          </div>
-          {!collapsed && (
-            <span className="text-[10px] text-sidebar-foreground/50 font-mono uppercase">{themeMode === 'system' ? 'OS' : ''}</span>
+        <div className="relative">
+          <button
+            onClick={() => setThemeMenuOpen(o => !o)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
+            title={`Theme: ${themeMode}`}
+          >
+            <div className="flex items-center gap-2">
+              {themeMode === 'dark' ? <Moon className="w-4 h-4 flex-shrink-0" /> : themeMode === 'light' ? <Sun className="w-4 h-4 flex-shrink-0" /> : <Monitor className="w-4 h-4 flex-shrink-0" />}
+              {!collapsed && (
+                <span className="capitalize">{themeMode === 'system' ? 'Auto' : themeMode}</span>
+              )}
+            </div>
+          </button>
+          {themeMenuOpen && (
+            <div className="absolute bottom-full left-0 mb-1 w-full bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+              {([
+                { value: 'light' as const, icon: Sun, label: 'Light' },
+                { value: 'dark' as const, icon: Moon, label: 'Dark' },
+                { value: 'system' as const, icon: Monitor, label: 'System' },
+              ]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setThemeMode(opt.value); setThemeMenuOpen(false); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition-colors ${
+                    themeMode === opt.value
+                      ? 'bg-primary/10 text-primary font-semibold'
+                      : 'text-foreground hover:bg-secondary/60'
+                  }`}
+                >
+                  <opt.icon className="w-4 h-4 flex-shrink-0" />
+                  <span>{opt.label}</span>
+                  {themeMode === opt.value && <CheckCircle className="w-3.5 h-3.5 ml-auto" />}
+                </button>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
         <button
           onClick={() => navigate('/')}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-destructive transition-colors"
