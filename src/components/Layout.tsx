@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command, Wifi, Clock, Rows3, Rows4 } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Monitor, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command, Wifi, Clock, Rows3, Rows4 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { alerts, agencies } from '@/data/mockData';
 import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
 import NotificationDrawer from '@/components/NotificationDrawer';
 import { toast } from '@/hooks/use-toast';
+import { useTheme } from '@/hooks/useTheme';
 
 // Live clock hook
 function useLiveClock() {
@@ -133,19 +134,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [density, setDensity] = useState<'comfortable' | 'compact'>(() => {
     return (localStorage.getItem('ui-density') as any) || 'comfortable';
   });
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' ||
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    }
-    return false;
-  });
+  const { mode: themeMode, setMode: setThemeMode, isDark } = useTheme();
   const clock = useLiveClock();
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('density-compact', density === 'compact');
@@ -262,17 +252,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
         {!collapsed && <p className="text-[10px] text-sidebar-foreground/50 px-1">Last sync: 2 min ago</p>}
         <button
-          onClick={() => setDarkMode(!darkMode)}
+          onClick={() => {
+            const cycle = { light: 'dark' as const, dark: 'system' as const, system: 'light' as const };
+            setThemeMode(cycle[themeMode]);
+          }}
           className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
+          title={`Theme: ${themeMode}`}
         >
           <div className="flex items-center gap-2">
-            {darkMode ? <Moon className="w-4 h-4 flex-shrink-0" /> : <Sun className="w-4 h-4 flex-shrink-0" />}
-            {!collapsed && <span>{darkMode ? 'Dark' : 'Light'}</span>}
+            {themeMode === 'dark' ? <Moon className="w-4 h-4 flex-shrink-0" /> : themeMode === 'light' ? <Sun className="w-4 h-4 flex-shrink-0" /> : <Monitor className="w-4 h-4 flex-shrink-0" />}
+            {!collapsed && (
+              <span className="capitalize">{themeMode === 'system' ? 'Auto' : themeMode}</span>
+            )}
           </div>
           {!collapsed && (
-            <div className={`w-9 h-[20px] rounded-full transition-colors relative ${darkMode ? 'bg-primary' : 'bg-muted'}`}>
-              <span className={`absolute top-[3px] w-[14px] h-[14px] rounded-full transition-transform shadow-sm ${darkMode ? 'left-[19px] bg-primary-foreground' : 'left-[3px] bg-muted-foreground'}`} />
-            </div>
+            <span className="text-[10px] text-sidebar-foreground/50 font-mono uppercase">{themeMode === 'system' ? 'OS' : ''}</span>
           )}
         </button>
         <button
