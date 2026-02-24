@@ -59,22 +59,30 @@ const Landing: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
-      {/* Navigation */}
-      <header className="w-full flex items-center justify-between px-6 md:px-12 lg:px-20 py-4 bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
+      {/* Navigation — transparent on hero, solid on scroll */}
+      <header
+        className="w-full flex items-center justify-between px-6 md:px-12 lg:px-20 py-4 sticky top-0 z-50 transition-all duration-500"
+        style={{
+          background: scrollY > 80 ? 'hsl(var(--background) / 0.95)' : 'transparent',
+          backdropFilter: scrollY > 80 ? 'blur(16px)' : 'none',
+          borderBottom: scrollY > 80 ? '1px solid hsl(var(--border))' : '1px solid transparent',
+          boxShadow: scrollY > 80 ? '0 4px 20px hsl(25 30% 10% / 0.12)' : 'none',
+        }}
+      >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center shadow-sm">
             <Shield className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <span className="font-heading text-sm text-foreground tracking-wider">RiskSense</span>
-            <span className="block text-[9px] text-muted-foreground font-mono tracking-[0.2em]">AI PLATFORM</span>
+            <span className="font-heading text-sm tracking-wider" style={{ color: scrollY > 80 ? 'hsl(var(--foreground))' : 'hsl(0 0% 95%)' }}>RiskSense</span>
+            <span className="block text-[9px] font-mono tracking-[0.2em]" style={{ color: scrollY > 80 ? 'hsl(var(--muted-foreground))' : 'hsl(0 0% 60%)' }}>AI PLATFORM</span>
           </div>
         </div>
         <div className="flex items-center gap-6">
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#stats" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Results</a>
-            <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
+            {['Features', 'Results', 'Testimonials'].map(item => (
+              <a key={item} href={`#${item.toLowerCase()}`} className="text-sm transition-colors hover:text-accent" style={{ color: scrollY > 80 ? 'hsl(var(--muted-foreground))' : 'hsl(0 0% 70%)' }}>{item}</a>
+            ))}
           </nav>
           <button
             onClick={() => navigate('/login')}
@@ -96,8 +104,8 @@ const Landing: React.FC = () => {
             transform: `translateY(${scrollY * 0.35}px) scale(1.1)`,
           }}
         />
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+        {/* Dark overlay — stronger for readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/65 to-black/50" />
         {/* Bottom gradient fade into page */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
         {/* Accent glow */}
@@ -112,12 +120,12 @@ const Landing: React.FC = () => {
               </div>
             </motion.div>
 
-            <motion.h1 {...fadeUp(0.1)} className="font-heading text-4xl md:text-5xl xl:text-[3.5rem] leading-[1.1] mb-6" style={{ color: 'hsl(0 0% 97%)' }}>
+            <motion.h1 {...fadeUp(0.1)} className="font-heading text-4xl md:text-5xl xl:text-[3.75rem] font-extrabold leading-[1.08] mb-6 drop-shadow-lg" style={{ color: 'hsl(0 0% 98%)' }}>
               Protect Your Revenue.<br />
-              <span className="text-accent">Outsmart Fraud.</span>
+              <span className="text-accent drop-shadow-md">Outsmart Fraud.</span>
             </motion.h1>
 
-            <motion.p {...fadeUp(0.2)} className="text-base md:text-lg max-w-lg leading-relaxed mb-10" style={{ color: 'hsl(0 0% 75%)' }}>
+            <motion.p {...fadeUp(0.2)} className="text-base md:text-lg max-w-lg leading-relaxed mb-10 font-medium" style={{ color: 'hsl(0 0% 78%)' }}>
               Enterprise-grade AI platform for real-time agency monitoring, trust scoring, and fraud detection — unified in one powerful command center.
             </motion.p>
 
@@ -135,8 +143,8 @@ const Landing: React.FC = () => {
               </button>
               <button
                 onClick={() => { const el = document.getElementById('features'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                className="h-12 px-6 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all border border-white/15 backdrop-blur-sm hover:bg-white/10"
-                style={{ color: 'hsl(0 0% 90%)' }}
+                className="h-12 px-6 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all bg-white/10 border border-white/20 backdrop-blur-sm hover:bg-white/20"
+                style={{ color: 'hsl(0 0% 95%)' }}
               >
                 Explore Features
                 <ChevronRight className="w-4 h-4" />
@@ -144,11 +152,11 @@ const Landing: React.FC = () => {
             </motion.div>
 
             {/* Floating stats row */}
-            <motion.div {...fadeUp(0.45)} className="flex flex-wrap gap-6 mt-14">
+            <motion.div {...fadeUp(0.45)} className="flex flex-wrap gap-8 md:gap-10 mt-16 pt-8 border-t border-white/10">
               {stats.map((s, i) => (
                 <div key={i} className="text-left">
-                  <p className="font-mono text-xl md:text-2xl font-bold text-accent">{s.value}</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'hsl(0 0% 55%)' }}>{s.label}</p>
+                  <p className="font-mono text-2xl md:text-3xl font-bold text-accent drop-shadow-sm">{s.value}</p>
+                  <p className="text-xs mt-1 font-medium" style={{ color: 'hsl(0 0% 60%)' }}>{s.label}</p>
                 </div>
               ))}
             </motion.div>
@@ -158,32 +166,32 @@ const Landing: React.FC = () => {
 
 
       {/* Features Grid */}
-      <section id="features" className="px-6 md:px-12 lg:px-20 py-20 md:py-28">
+      <section id="features" className="px-6 md:px-12 lg:px-20 py-24 md:py-32">
         <div className="max-w-6xl mx-auto">
-          <motion.div {...fadeUp(0)} className="text-center mb-14">
+          <motion.div {...fadeUp(0)} className="text-center mb-16">
             <span className="text-xs font-semibold text-accent tracking-widest uppercase mb-3 block">Platform Capabilities</span>
-            <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4">
+            <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-5">
               Everything You Need to<br />Manage Agency Risk
             </h2>
-            <p className="text-muted-foreground text-base max-w-xl mx-auto">
+            <p className="text-muted-foreground text-base max-w-xl mx-auto leading-relaxed">
               From real-time scoring to compliance reporting, every tool purpose-built for risk professionals.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <motion.div
                 key={i}
                 {...fadeUp(0.05 * i)}
-                className="group rounded-xl border border-border bg-card p-6 hover:border-accent/25 transition-all duration-300 relative overflow-hidden"
-                style={{ boxShadow: '0 1px 3px hsl(25 30% 15% / 0.04)' }}
+                className="group rounded-xl border border-border bg-card p-6 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
+                style={{ boxShadow: '0 2px 8px hsl(25 30% 15% / 0.05)' }}
               >
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent/0 via-accent/40 to-accent/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="w-10 h-10 rounded-xl bg-accent/8 flex items-center justify-center mb-4 group-hover:bg-accent/15 transition-colors">
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-accent/0 via-accent/50 to-accent/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-5 group-hover:bg-accent/20 group-hover:shadow-md transition-all">
                   <f.icon className="w-5 h-5 text-accent" />
                 </div>
-                <p className="text-foreground text-sm font-bold mb-2">{f.label}</p>
-                <p className="text-muted-foreground text-xs leading-relaxed">{f.desc}</p>
+                <p className="text-foreground text-sm font-bold mb-2.5">{f.label}</p>
+                <p className="text-muted-foreground text-xs leading-relaxed min-h-[3rem]">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -200,27 +208,28 @@ const Landing: React.FC = () => {
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
               <motion.div
                 key={i}
                 {...fadeUp(0.1 * i)}
-                className="rounded-xl border border-border bg-card p-6 flex flex-col"
-                style={{ boxShadow: '0 2px 8px hsl(25 30% 15% / 0.04)' }}
+                className="rounded-xl border border-border bg-card p-7 flex flex-col hover:-translate-y-1 transition-all duration-300"
+                style={{ boxShadow: '0 2px 12px hsl(25 30% 15% / 0.05)' }}
               >
-                <div className="flex gap-0.5 mb-4">
+                <div className="flex gap-1 mb-5">
                   {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="w-3.5 h-3.5 fill-accent text-accent" />
+                    <Star key={j} className="w-4 h-4 fill-accent/80 text-accent/80" />
                   ))}
                 </div>
-                <p className="text-foreground text-sm leading-relaxed mb-6 flex-1">"{t.quote}"</p>
-                <div className="flex items-center gap-3 pt-4 border-t border-border">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs" style={{ background: 'hsl(38 60% 50% / 0.12)', color: 'hsl(38 60% 50%)' }}>
+                <p className="text-foreground text-[15px] leading-relaxed mb-7 flex-1 italic">"{t.quote}"</p>
+                <div className="flex items-center gap-3 pt-5 border-t border-border">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs" style={{ background: 'hsl(38 60% 50% / 0.12)', color: 'hsl(38 60% 50%)' }}>
                     {t.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div>
-                    <p className="text-foreground text-xs font-semibold">{t.name}</p>
-                    <p className="text-muted-foreground text-[11px]">{t.role}, {t.company}</p>
+                    <p className="text-foreground text-sm font-semibold">{t.name}</p>
+                    <p className="text-muted-foreground text-[11px]">{t.role}</p>
+                    <p className="text-accent text-[11px] font-medium">{t.company}</p>
                   </div>
                 </div>
               </motion.div>
@@ -232,14 +241,16 @@ const Landing: React.FC = () => {
       {/* CTA Section */}
       <section className="px-6 md:px-12 lg:px-20 py-20 md:py-28">
         <motion.div {...fadeUp(0)} className="max-w-3xl mx-auto text-center">
-          <div className="rounded-2xl p-10 md:p-14 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(25 30% 12%), hsl(25 25% 18%))' }}>
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, hsl(38 60% 50%), transparent 70%)' }} />
+          <div className="rounded-2xl p-10 md:p-14 relative overflow-hidden border border-white/5" style={{ background: 'linear-gradient(135deg, hsl(25 30% 12%), hsl(25 25% 18%))' }}>
+            <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-[0.12]" style={{ background: 'radial-gradient(circle, hsl(38 60% 50%), transparent 70%)' }} />
+            <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(circle, hsl(38 60% 60%), transparent 70%)' }} />
+            <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: 'inset 0 1px 0 hsl(38 60% 50% / 0.08)' }} />
             <div className="relative z-10">
-              <ShieldCheck className="w-10 h-10 mx-auto mb-5" style={{ color: 'hsl(38 55% 65%)' }} />
-              <h2 className="font-heading text-2xl md:text-3xl mb-4" style={{ color: 'hsl(30 20% 92%)' }}>
+              <ShieldCheck className="w-12 h-12 mx-auto mb-6" style={{ color: 'hsl(38 55% 65%)' }} />
+              <h2 className="font-heading text-2xl md:text-3xl mb-4" style={{ color: 'hsl(30 20% 94%)' }}>
                 Ready to Protect Your Business?
               </h2>
-              <p className="text-sm md:text-base mb-8 max-w-lg mx-auto" style={{ color: 'hsl(30 12% 60%)' }}>
+              <p className="text-sm md:text-base mb-8 max-w-lg mx-auto leading-relaxed" style={{ color: 'hsl(30 12% 65%)' }}>
                 Join leading enterprises using RiskSense AI to detect fraud, manage agency risk, and safeguard revenue in real-time.
               </p>
               <button
