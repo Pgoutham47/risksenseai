@@ -28,6 +28,36 @@ export const AnimatedScore: React.FC<AnimatedScoreProps> = ({ value, className =
   return <span className={`font-mono ${className}`}>{display}</span>;
 };
 
+// Animated currency counter (e.g. ₹84.0L)
+interface AnimatedCurrencyProps {
+  value: number;
+  className?: string;
+  duration?: number;
+}
+
+export const AnimatedCurrency: React.FC<AnimatedCurrencyProps> = ({ value, className = '', duration = 1200 }) => {
+  const [display, setDisplay] = useState('₹0');
+  const ref = useRef<number>();
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = value * eased;
+      if (current >= 100000) setDisplay(`₹${(current / 100000).toFixed(1)}L`);
+      else if (current >= 1000) setDisplay(`₹${(current / 1000).toFixed(0)}K`);
+      else setDisplay(`₹${Math.round(current)}`);
+      if (progress < 1) ref.current = requestAnimationFrame(animate);
+    };
+    ref.current = requestAnimationFrame(animate);
+    return () => { if (ref.current) cancelAnimationFrame(ref.current); };
+  }, [value, duration]);
+
+  return <span className={`font-mono ${className}`}>{display}</span>;
+};
+
 interface SignalGaugeProps {
   score: number;
   size?: number;
@@ -84,4 +114,35 @@ export const PageTransition: React.FC<{ children: React.ReactNode }> = ({ childr
   >
     {children}
   </motion.div>
+);
+
+// Dashboard skeleton loader
+export const DashboardSkeleton: React.FC = () => (
+  <div className="space-y-5 animate-pulse">
+    {/* KPI skeleton */}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="kpi-card h-[120px]">
+          <div className="flex items-start justify-between mb-4">
+            <div className="h-3 w-24 rounded bg-muted" />
+            <div className="w-9 h-9 rounded-lg bg-muted" />
+          </div>
+          <div className="h-7 w-16 rounded bg-muted" />
+        </div>
+      ))}
+    </div>
+    {/* Grid skeleton */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="lg:col-span-4 panel-glass p-6 h-[360px]">
+        <div className="h-3 w-32 rounded bg-muted mb-6" />
+        <div className="w-[200px] h-[200px] rounded-full bg-muted mx-auto" />
+      </div>
+      <div className="lg:col-span-8 panel-glass p-6 h-[360px]">
+        <div className="h-3 w-40 rounded bg-muted mb-6" />
+        {[1, 2, 3, 4, 5].map(i => (
+          <div key={i} className="h-10 rounded bg-muted mb-2" />
+        ))}
+      </div>
+    </div>
+  </div>
 );
