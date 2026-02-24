@@ -1,21 +1,44 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, ArrowRight, Lock } from 'lucide-react';
+import { Shield, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!email.trim()) e.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Invalid email format';
+    if (!password.trim()) e.password = 'Password is required';
+    else if (password.length < 4) e.password = 'Password too short';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      toast({ title: 'Welcome back!', description: 'Logged in as Risk Officer' });
       navigate('/dashboard');
     }, 800);
+  };
+
+  const handleForgotPassword = () => {
+    if (!email.trim()) {
+      toast({ title: 'Enter your email', description: 'Please enter your email address first, then click Forgot Password.', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Reset link sent', description: `A password reset link has been sent to ${email}` });
   };
 
   return (
@@ -64,18 +87,25 @@ const Login: React.FC = () => {
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground tracking-wide uppercase">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              <input type="email" value={email} onChange={e => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: undefined })); }}
                 placeholder="admin@risksense.ai"
-                className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all" />
+                className={`w-full h-11 px-4 rounded-lg border ${errors.email ? 'border-destructive' : 'border-input'} bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all`} />
+              {errors.email && <p className="text-[11px] text-destructive">{errors.email}</p>}
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-foreground tracking-wide uppercase">Password</label>
-                <button type="button" className="text-xs text-primary hover:text-primary/80 transition-colors">Forgot password?</button>
+                <button type="button" onClick={handleForgotPassword} className="text-xs text-primary hover:text-primary/80 transition-colors">Forgot password?</button>
               </div>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full h-11 px-4 rounded-lg border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all" />
+              <div className="relative">
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setErrors(prev => ({ ...prev, password: undefined })); }}
+                  placeholder="••••••••"
+                  className={`w-full h-11 px-4 pr-10 rounded-lg border ${errors.password ? 'border-destructive' : 'border-input'} bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-[11px] text-destructive">{errors.password}</p>}
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" id="remember" className="rounded border-input" />
@@ -86,7 +116,10 @@ const Login: React.FC = () => {
               {loading ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
-          <div className="mt-8 pt-6 border-t border-border flex items-center gap-2 text-muted-foreground">
+          <div className="mt-6 text-center">
+            <p className="text-xs text-muted-foreground">Demo credentials: any email & password (4+ chars)</p>
+          </div>
+          <div className="mt-6 pt-6 border-t border-border flex items-center gap-2 text-muted-foreground">
             <Lock className="w-3.5 h-3.5" />
             <span className="text-xs">256-bit TLS encrypted · SOC 2 Compliant</span>
           </div>
