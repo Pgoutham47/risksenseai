@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command, Wifi, Clock, Rows3, Rows4 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { alerts, agencies } from '@/data/mockData';
 import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
 import NotificationDrawer from '@/components/NotificationDrawer';
 import { toast } from '@/hooks/use-toast';
+
+// Live clock hook
+function useLiveClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Command Center overview' },
@@ -120,6 +130,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [density, setDensity] = useState<'comfortable' | 'compact'>(() => {
+    return (localStorage.getItem('ui-density') as any) || 'comfortable';
+  });
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('theme') === 'dark' ||
@@ -127,11 +140,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
     return false;
   });
+  const clock = useLiveClock();
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('density-compact', density === 'compact');
+    localStorage.setItem('ui-density', density);
+  }, [density]);
 
   // ⌘K shortcut
   useEffect(() => {
@@ -321,12 +340,30 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 )}
               </div>
 
+              {/* Density toggle */}
+              <button
+                onClick={() => setDensity(d => d === 'comfortable' ? 'compact' : 'comfortable')}
+                className="hidden md:flex text-muted-foreground hover:text-foreground transition-colors active:scale-95"
+                title={density === 'comfortable' ? 'Switch to compact' : 'Switch to comfortable'}
+              >
+                {density === 'comfortable' ? <Rows4 className="w-[18px] h-[18px]" /> : <Rows3 className="w-[18px] h-[18px]" />}
+              </button>
+
               <button onClick={() => setDrawerOpen(true)} className="relative text-muted-foreground hover:text-foreground transition-colors active:scale-95">
                 <Bell className="w-[18px] h-[18px]" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
                 )}
               </button>
+
+              {/* Clock + user */}
+              <div className="hidden md:flex items-center gap-2 pl-3 border-l border-border">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
+                  {clock.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                </span>
+              </div>
+
               <div className="flex items-center gap-2 pl-3 border-l border-border">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm">
                   <User className="w-4 h-4 text-primary-foreground" />
@@ -381,6 +418,25 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </motion.div>
           </AnimatePresence>
         </main>
+
+        {/* Status footer */}
+        <footer className="hidden md:flex h-7 border-t border-border bg-card/80 backdrop-blur-sm items-center justify-between px-4 md:px-6 text-[10px] text-muted-foreground flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--band-clear))] pulse-live" />
+              <span>System Healthy</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Wifi className="w-3 h-3" />
+              <span>API: 42ms</span>
+            </div>
+            <span>Last sync: {clock.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="font-mono">v2.4.1</span>
+            <span className="px-1.5 py-0.5 rounded bg-[hsl(var(--band-clear))/0.1] text-[hsl(var(--band-clear))] font-semibold uppercase tracking-wider">PROD</span>
+          </div>
+        </footer>
       </div>
 
       <NotificationDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
