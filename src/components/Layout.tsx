@@ -1,21 +1,116 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders, ClipboardList, FileText } from 'lucide-react';
-import { alerts } from '@/data/mockData';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { alerts, agencies } from '@/data/mockData';
 import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
 import NotificationDrawer from '@/components/NotificationDrawer';
 import { toast } from '@/hooks/use-toast';
 
 const navItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Agency Directory', path: '/agencies', icon: Building2 },
-  { label: 'Alerts', path: '/alerts', icon: Bell, badge: true },
-  { label: 'Analytics', path: '/analytics', icon: BarChart3 },
-  { label: 'Simulator', path: '/simulator', icon: Sliders },
-  { label: 'Audit Log', path: '/audit-log', icon: ClipboardList },
-  { label: 'Reports', path: '/reports', icon: FileText },
-  { label: 'Settings', path: '/settings', icon: Settings },
+  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Command Center overview' },
+  { label: 'Agency Directory', path: '/agencies', icon: Building2, description: 'Browse and filter agencies' },
+  { label: 'Alerts', path: '/alerts', icon: Bell, badge: true, description: 'Active alerts and escalations' },
+  { label: 'Analytics', path: '/analytics', icon: BarChart3, description: 'Charts and trend analysis' },
+  { label: 'Simulator', path: '/simulator', icon: Sliders, description: 'Fraud scenario testing' },
+  { label: 'Audit Log', path: '/audit-log', icon: ClipboardList, description: 'Decision history trail' },
+  { label: 'Reports', path: '/reports', icon: FileText, description: 'Build and export reports' },
+  { label: 'Settings', path: '/settings', icon: Settings, description: 'Platform configuration' },
 ];
+
+// Page metadata
+const pageMeta: Record<string, { title: string; description: string; breadcrumbs: { label: string; path?: string }[] }> = {
+  '/dashboard': { title: 'Command Center', description: 'Real-time risk monitoring and KPI overview', breadcrumbs: [{ label: 'Dashboard' }] },
+  '/agencies': { title: 'Agency Directory', description: 'Browse, filter, and manage agency portfolios', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Agencies' }] },
+  '/alerts': { title: 'Alerts Center', description: 'Active alerts, escalations, and acknowledgements', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Alerts' }] },
+  '/analytics': { title: 'Analytics', description: 'Portfolio trends, cohort analysis, and risk metrics', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Analytics' }] },
+  '/simulator': { title: 'Fraud Scenario Simulator', description: 'Test signal combinations and score impact', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Simulator' }] },
+  '/audit-log': { title: 'Audit Log', description: 'Chronological record of all system decisions', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Audit Log' }] },
+  '/reports': { title: 'Report Builder', description: 'Generate and export risk assessment reports', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Reports' }] },
+  '/settings': { title: 'Settings', description: 'Configure thresholds, notifications, and preferences', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Settings' }] },
+};
+
+// Command palette
+const CommandPalette: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    if (open) setQuery('');
+  }, [open]);
+
+  const allItems = [
+    ...navItems.map(n => ({ type: 'page' as const, label: n.label, description: n.description, path: n.path, icon: n.icon })),
+    ...agencies.slice(0, 8).map(a => ({ type: 'agency' as const, label: a.name, description: `${a.band} · Score ${a.trustScore}`, path: `/agency/${a.id}`, icon: Building2 })),
+  ];
+
+  const filtered = query
+    ? allItems.filter(item => item.label.toLowerCase().includes(query.toLowerCase()) || item.description.toLowerCase().includes(query.toLowerCase()))
+    : allItems;
+
+  const handleSelect = (path: string) => {
+    navigate(path);
+    onClose();
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-[60]"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ duration: 0.15 }}
+            className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-lg z-[61]"
+          >
+            <div className="panel-glass border border-border shadow-2xl overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+                <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') onClose();
+                    if (e.key === 'Enter' && filtered.length > 0) handleSelect(filtered[0].path);
+                  }}
+                  placeholder="Search pages, agencies..."
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-secondary text-[10px] text-muted-foreground font-mono">ESC</kbd>
+              </div>
+              <div className="max-h-72 overflow-y-auto p-2">
+                {filtered.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No results found</p>
+                )}
+                {filtered.map((item, i) => (
+                  <button
+                    key={`${item.type}-${item.path}-${i}`}
+                    onClick={() => handleSelect(item.path)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-secondary/60 transition-colors group"
+                  >
+                    <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-foreground font-medium block truncate">{item.label}</span>
+                      <span className="text-[11px] text-muted-foreground block truncate">{item.description}</span>
+                    </div>
+                    <span className="text-[9px] text-muted-foreground uppercase tracking-wider">{item.type}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
@@ -24,9 +119,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [cmdOpen, setCmdOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || 
+      return localStorage.getItem('theme') === 'dark' ||
         (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
     }
     return false;
@@ -37,35 +133,50 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
+  // ⌘K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen(o => !o);
+      }
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const { unreadCount } = useNotifications();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useNotificationListener((n) => {
     const variant = n.severity === 'CRITICAL' ? 'destructive' : 'default';
-    toast({
-      title: n.title,
-      description: n.message,
-      variant,
-    });
+    toast({ title: n.title, description: n.message, variant });
   });
 
   const unackAlerts = alerts.filter(a => !a.acknowledged).length;
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
-  const pageTitle = (() => {
-    if (location.pathname === '/dashboard') return 'Command Center';
-    if (location.pathname === '/agencies') return 'Agency Directory';
-    if (location.pathname.startsWith('/agency/')) return 'Agency Profile';
-    if (location.pathname === '/alerts') return 'Alerts Center';
-    if (location.pathname === '/analytics') return 'Analytics';
-    if (location.pathname === '/settings') return 'Settings';
-    if (location.pathname === '/simulator') return 'Fraud Scenario Simulator';
-    if (location.pathname === '/audit-log') return 'Audit Log';
-    if (location.pathname === '/reports') return 'Report Builder';
-    return 'RiskSense AI';
+  // Resolve page metadata
+  const currentMeta = (() => {
+    if (location.pathname.startsWith('/agency/')) {
+      const id = location.pathname.split('/agency/')[1];
+      const agency = agencies.find(a => a.id === id);
+      return {
+        title: agency?.name || 'Agency Profile',
+        description: agency ? `${agency.band} · Score ${agency.trustScore} · ${agency.cohort}` : 'Agency details and risk profile',
+        breadcrumbs: [
+          { label: 'Dashboard', path: '/dashboard' },
+          { label: 'Agencies', path: '/agencies' },
+          { label: agency?.name || id },
+        ],
+      };
+    }
+    return pageMeta[location.pathname] || { title: 'RiskSense AI', description: '', breadcrumbs: [] };
   })();
 
   const sidebarContent = (
@@ -142,79 +253,138 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Subtle background texture */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.015] dark:opacity-[0.03]"
+        style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--foreground)) 0.5px, transparent 0)', backgroundSize: '24px 24px' }}
+      />
+
       {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar — desktop */}
-      <aside className={`hidden md:flex flex-col bg-sidebar transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
+      <aside className={`hidden md:flex flex-col bg-sidebar transition-all duration-200 z-10 ${collapsed ? 'w-16' : 'w-60'}`}>
         {sidebarContent}
       </aside>
 
-      {/* Sidebar — mobile drawer */}
+      {/* Sidebar — mobile */}
       <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-sidebar shadow-2xl transform transition-transform duration-200 md:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {sidebarContent}
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Header */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 bg-card flex-shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="md:hidden text-muted-foreground hover:text-foreground">
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className="font-heading text-base md:text-lg tracking-wider text-foreground">{pageTitle}</h1>
-          </div>
-          <div className="flex items-center gap-3 md:gap-4">
-            <div className="relative">
-              {searchOpen ? (
-                <input
-                  autoFocus
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  onBlur={() => { setSearchOpen(false); setSearchQuery(''); }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && searchQuery.trim()) {
-                      navigate(`/agencies?search=${encodeURIComponent(searchQuery)}`);
-                      setSearchOpen(false);
-                      setSearchQuery('');
-                    }
-                  }}
-                  placeholder="Search agencies..."
-                  className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground w-40 md:w-56 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-                />
-              ) : (
-                <button onClick={() => setSearchOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors">
-                  <Search className="w-[18px] h-[18px]" />
-                </button>
-              )}
-            </div>
-            <button onClick={() => setDrawerOpen(true)} className="relative text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="w-[18px] h-[18px]" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
-              )}
-            </button>
-            <div className="flex items-center gap-2 pl-3 border-l border-border">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <User className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <div className="hidden md:flex flex-col">
-                <span className="text-xs text-foreground font-medium">Admin</span>
-                <span className="text-[10px] text-muted-foreground">Risk Officer</span>
+        <header className="border-b border-border flex flex-col bg-card flex-shrink-0 shadow-sm">
+          {/* Top bar */}
+          <div className="h-14 flex items-center justify-between px-4 md:px-6">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setMobileOpen(true)} className="md:hidden text-muted-foreground hover:text-foreground active:scale-95 transition-transform">
+                <Menu className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="font-heading text-base md:text-lg tracking-wider text-foreground leading-tight">{currentMeta.title}</h1>
               </div>
             </div>
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* Command palette trigger */}
+              <button
+                onClick={() => setCmdOpen(true)}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/60 border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all text-xs"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Search...</span>
+                <kbd className="ml-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">⌘K</kbd>
+              </button>
+
+              <div className="relative sm:hidden">
+                {searchOpen ? (
+                  <input
+                    autoFocus
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    onBlur={() => { setSearchOpen(false); setSearchQuery(''); }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && searchQuery.trim()) {
+                        navigate(`/agencies?search=${encodeURIComponent(searchQuery)}`);
+                        setSearchOpen(false); setSearchQuery('');
+                      }
+                    }}
+                    placeholder="Search agencies..."
+                    className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground w-40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
+                  />
+                ) : (
+                  <button onClick={() => setSearchOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                    <Search className="w-[18px] h-[18px]" />
+                  </button>
+                )}
+              </div>
+
+              <button onClick={() => setDrawerOpen(true)} className="relative text-muted-foreground hover:text-foreground transition-colors active:scale-95">
+                <Bell className="w-[18px] h-[18px]" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                )}
+              </button>
+              <div className="flex items-center gap-2 pl-3 border-l border-border">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm">
+                  <User className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <div className="hidden md:flex flex-col">
+                  <span className="text-xs text-foreground font-medium">Admin</span>
+                  <span className="text-[10px] text-muted-foreground">Risk Officer</span>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* Breadcrumb + description bar */}
+          {currentMeta.breadcrumbs.length > 0 && (
+            <div className="px-4 md:px-6 pb-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[11px]">
+                {currentMeta.breadcrumbs.map((crumb, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && <ChevronR className="w-3 h-3 text-muted-foreground/50" />}
+                    {crumb.path ? (
+                      <button
+                        onClick={() => navigate(crumb.path!)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {crumb.label}
+                      </button>
+                    ) : (
+                      <span className="text-foreground font-medium">{crumb.label}</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+              {currentMeta.description && (
+                <span className="hidden lg:block text-[10px] text-muted-foreground">{currentMeta.description}</span>
+              )}
+            </div>
+          )}
         </header>
 
-        {/* Page content */}
+        {/* Page content with route transition */}
         <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
-          {children}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="h-full"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
+
       <NotificationDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </div>
   );
 };

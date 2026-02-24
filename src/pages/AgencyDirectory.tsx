@@ -4,6 +4,7 @@ import { Search, ArrowUpDown, LayoutGrid, List, AlertTriangle, TrendingDown, X }
 import { motion, AnimatePresence } from 'framer-motion';
 import { agencies, getBandClass, getBorderBandClass, formatCurrency, generateAgencyScoreHistory, type Band, type Agency } from '@/data/mockData';
 import { PageTransition } from '@/components/AnimatedComponents';
+import EmptyState from '@/components/EmptyState';
 
 type SortKey = 'trustScore' | 'outstandingBalance' | 'lastUpdated';
 type ViewMode = 'hybrid' | 'grid' | 'table';
@@ -282,8 +283,18 @@ const AgencyDirectory: React.FC = () => {
           </div>
         </motion.div>
 
+        {/* Empty state */}
+        {filtered.length === 0 && (
+          <EmptyState
+            type={search ? 'search' : 'filter'}
+            title={search ? `No agencies matching "${search}"` : 'No agencies in this filter'}
+            description={search ? 'Try a different name or ID, or clear your search.' : 'Adjust your band or tenure filters to see results.'}
+            action={{ label: 'Clear Filters', onClick: () => { setSearch(''); setBandFilter('ALL'); setTenureFilter('ALL'); } }}
+          />
+        )}
+
         {/* Flagged Cards — only in hybrid/grid mode */}
-        {(viewMode === 'hybrid' || viewMode === 'grid') && flaggedAgencies.length > 0 && (
+        {filtered.length > 0 && (viewMode === 'hybrid' || viewMode === 'grid') && flaggedAgencies.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-destructive" />

@@ -331,6 +331,44 @@
     box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--gold) / 0.4);
   }
 
+  /* Micro-interaction: button press */
+  .press-scale {
+    @apply transition-transform duration-100;
+  }
+  .press-scale:active {
+    transform: scale(0.97);
+  }
+
+  /* Card hover lift */
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -8px hsl(var(--warm-shadow) / 0.12);
+  }
+
+  /* Gold focus ring */
+  .gold-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--gold) / 0.35);
+  }
+
+  /* Empty state container */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 px-6 text-center;
+  }
+  .empty-state-icon {
+    @apply w-16 h-16 rounded-2xl flex items-center justify-center mb-4;
+    background: hsl(var(--muted));
+  }
+  .empty-state-title {
+    @apply text-sm font-heading tracking-wider text-foreground mb-1;
+  }
+  .empty-state-description {
+    @apply text-xs text-muted-foreground max-w-xs;
+  }
+
   /* Live event slide-in animation */
   @keyframes slide-in-event {
     0% {
