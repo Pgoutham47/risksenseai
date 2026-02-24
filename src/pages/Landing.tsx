@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, ArrowRight, Activity, Building2, Bell, BarChart3, Lock, Zap, Eye, ChevronRight, Star, TrendingUp, Users, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,6 +10,14 @@ const fadeUp = (delay = 0) => ({
 });
 
 const Landing: React.FC = () => {
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const navigate = useNavigate();
 
   const features = [
@@ -82,8 +90,11 @@ const Landing: React.FC = () => {
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
         {/* Background Image */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url(/images/hero-bg.png)' }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat will-change-transform"
+          style={{
+            backgroundImage: 'url(/images/hero-bg.png)',
+            transform: `translateY(${scrollY * 0.35}px) scale(1.1)`,
+          }}
         />
         {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
