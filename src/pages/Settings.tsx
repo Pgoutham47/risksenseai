@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { CheckCircle, Wifi, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, Wifi, RotateCcw, Sun, Moon, Monitor } from 'lucide-react';
 import { SIGNAL_DEFINITIONS } from '@/data/mockData';
 import { PageTransition } from '@/components/AnimatedComponents';
 import { toast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 
 const defaultWeights = [18, 15, 12, 13, 14, 8, 10, 10];
 const defaultThresholds = { BLOCKED: 15, RESTRICTED: 35, WARNING: 55, CAUTION: 75 };
@@ -17,6 +18,14 @@ const Settings: React.FC = () => {
   const [tenurePeriod, setTenurePeriod] = useState(90);
   const [saved, setSaved] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    return document.documentElement.classList.contains('dark');
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   const totalWeight = weights.reduce((s, w) => s + w, 0);
 
@@ -113,6 +122,21 @@ const Settings: React.FC = () => {
           <div className="flex items-center gap-3">
             <input type="number" value={tenurePeriod} onChange={e => { setTenurePeriod(Number(e.target.value)); setHasChanges(true); }} className="w-24 bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40" />
             <span className="text-sm text-muted-foreground">days</span>
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div className="panel p-6">
+          <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Appearance</h3>
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-3">
+              {darkMode ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-gold" />}
+              <div>
+                <span className="text-sm text-foreground font-medium block">Dark Mode</span>
+                <span className="text-[11px] text-muted-foreground">Switch between light and dark theme</span>
+              </div>
+            </div>
+            <Switch checked={darkMode} onCheckedChange={setDarkMode} />
           </div>
         </div>
 
