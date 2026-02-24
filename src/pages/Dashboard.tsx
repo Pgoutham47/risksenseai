@@ -12,7 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   agencies, liveEvents, generateScoreHistory, generateHeatmapData,
-  getBandClass, getBandColor, formatCurrency, type Band
+  getBandClass, getBandColor, formatCurrency, alerts, type Band
 } from '@/data/mockData';
 import { AnimatedScore, AnimatedCurrency, PageTransition, DashboardSkeleton } from '@/components/AnimatedComponents';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -86,10 +86,14 @@ const MiniSparkline: React.FC<{ data: number[]; color: string; className?: strin
 const ChartTooltipContent = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-lg text-xs">
-      <p className="text-muted-foreground mb-1">{label}</p>
+    <div className="rounded-xl border border-border bg-card px-4 py-3 shadow-xl text-xs" style={{ boxShadow: '0 8px 30px -8px hsl(var(--warm-shadow) / 0.15)' }}>
+      <p className="text-muted-foreground mb-1.5 text-[10px] uppercase tracking-wider font-medium">{label}</p>
       {payload.map((p: any, i: number) => (
-        <p key={i} className="font-mono font-semibold text-foreground">{p.value.toFixed(1)}</p>
+        <div key={i} className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full" style={{ background: p.stroke || p.fill || 'hsl(var(--accent))' }} />
+          <span className="font-mono font-bold text-foreground text-sm">{p.value.toFixed(1)}</span>
+          <span className="text-muted-foreground text-[10px]">pts</span>
+        </div>
       ))}
     </div>
   );
@@ -575,21 +579,34 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  // Greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
   return (
     <PageTransition>
-      <div ref={containerRef} className="space-y-5 -m-4 md:-m-6 p-4 md:p-6 overflow-auto h-[calc(100vh-3.5rem)]">
+      <div ref={containerRef} className="space-y-5 -m-4 md:-m-6 p-4 md:p-6 overflow-auto h-[calc(100vh-5rem)]">
         {indicator}
 
-        {/* Walkthrough trigger */}
-        <div className="flex justify-end -mb-3">
+        {/* ── Greeting Header ─────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-2"
+        >
+          <div>
+            <h2 className="text-lg md:text-xl font-heading tracking-wider text-foreground">{greeting}, Admin</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{today} · {warningOrWorse} agencies need attention · {alerts.filter(a => !a.acknowledged).length} unresolved alerts</p>
+          </div>
           <button
             onClick={() => setShowWalkthrough(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors press-scale"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors press-scale self-start sm:self-auto"
           >
             <HelpCircle className="w-3.5 h-3.5" />
             Tour
           </button>
-        </div>
+        </motion.div>
 
         {/* ── Full-width KPI Hero Strip ─────────────────────────── */}
         <div id="kpi-strip" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -689,37 +706,47 @@ const Dashboard: React.FC = () => {
                     View All <ArrowUpRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-lg border border-border/50">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-muted-foreground border-b border-border">
-                        <th className="text-left py-2.5 font-medium">Agency</th>
-                        <th className="text-center py-2.5 font-medium">Score</th>
-                        <th className="text-center py-2.5 font-medium">Band</th>
-                        <th className="text-right py-2.5 font-medium">Exposure</th>
-                        <th className="text-right py-2.5 font-medium">Utilization</th>
-                        <th className="text-center py-2.5 font-medium">Trend</th>
+                      <tr className="text-muted-foreground bg-secondary/60 sticky top-0 z-10">
+                        <th className="text-left py-3 px-4 font-medium">Agency</th>
+                        <th className="text-center py-3 px-4 font-medium">Score</th>
+                        <th className="text-center py-3 px-4 font-medium">Band</th>
+                        <th className="text-right py-3 px-4 font-medium">Exposure</th>
+                        <th className="text-right py-3 px-4 font-medium">Utilization</th>
+                        <th className="text-center py-3 px-4 font-medium">Trend</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {topAtRisk.map(a => (
-                        <tr key={a.id} className="border-b border-border/50 premium-row cursor-pointer" onClick={() => navigate(`/agency/${a.id}`)}>
-                          <td className="py-3 text-foreground font-medium">{a.name}</td>
-                          <td className="text-center font-mono text-foreground font-semibold">{a.trustScore}</td>
-                          <td className="text-center"><span className={getBandClass(a.band)}>{a.band}</span></td>
-                          <td className="text-right font-mono text-foreground">{formatCurrency(a.outstandingBalance)}</td>
-                          <td className="text-right">
-                            <div className="inline-flex items-center gap-2">
-                              <div className="w-12 h-1.5 rounded-full overflow-hidden" style={{ background: 'hsl(var(--muted))' }}>
-                                <div className="h-full rounded-full transition-all" style={{
-                                  width: `${a.utilization}%`,
-                                  background: a.utilization > 70 ? 'hsl(var(--destructive))' : a.utilization > 50 ? 'hsl(var(--band-warning))' : 'hsl(var(--band-clear))'
-                                }} />
-                              </div>
-                              <span className="font-mono text-muted-foreground">{a.utilization}%</span>
+                      {topAtRisk.map((a, idx) => (
+                        <tr key={a.id} className={`border-b border-border/30 cursor-pointer transition-colors hover:bg-accent/[0.04] ${idx % 2 === 1 ? 'bg-secondary/20' : ''}`} onClick={() => navigate(`/agency/${a.id}`)}>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-col">
+                              <span className="text-foreground font-medium">{a.name}</span>
+                              <span className="text-[10px] text-muted-foreground font-mono">{a.id}</span>
                             </div>
                           </td>
-                          <td className="text-center">{a.trustScore < 40 ? <TrendingDown className="w-3.5 h-3.5 text-destructive inline" /> : <TrendingUp className="w-3.5 h-3.5 text-band-clear inline" />}</td>
+                          <td className="text-center px-4 font-mono text-foreground font-semibold">{a.trustScore}</td>
+                          <td className="text-center px-4"><span className={getBandClass(a.band)}>{a.band}</span></td>
+                          <td className="text-right px-4 font-mono text-foreground">{formatCurrency(a.outstandingBalance)}</td>
+                          <td className="text-right px-4">
+                            <div className="inline-flex items-center gap-2">
+                              <div className="w-14 h-1.5 rounded-full overflow-hidden bg-muted">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${a.utilization}%` }}
+                                  transition={{ duration: 0.8, delay: idx * 0.1 }}
+                                  className="h-full rounded-full"
+                                  style={{
+                                    background: a.utilization > 70 ? 'hsl(var(--destructive))' : a.utilization > 50 ? 'hsl(var(--band-warning))' : 'hsl(var(--band-clear))'
+                                  }}
+                                />
+                              </div>
+                              <span className="font-mono text-muted-foreground text-[10px] w-8 text-right">{a.utilization}%</span>
+                            </div>
+                          </td>
+                          <td className="text-center px-4">{a.trustScore < 40 ? <TrendingDown className="w-3.5 h-3.5 text-destructive inline" /> : <TrendingUp className="w-3.5 h-3.5 text-[hsl(var(--band-clear))] inline" />}</td>
                         </tr>
                       ))}
                     </tbody>
