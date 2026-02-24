@@ -330,4 +330,25 @@
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--gold) / 0.4);
   }
+
+  /* Live event slide-in animation */
+  @keyframes slide-in-event {
+    0% {
+      opacity: 0;
+      transform: translateY(-100%);
+      max-height: 0;
+    }
+    30% {
+      max-height: 60px;
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 60px;
+    }
+  }
+  .animate-slide-in-event {
+    animation: slide-in-event 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    background: hsl(var(--gold) / 0.04);
+  }
 }
