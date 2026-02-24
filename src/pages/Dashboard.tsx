@@ -172,13 +172,95 @@ const LiveEventFeed: React.FC = () => {
   );
 };
 
+// ── Pull-to-refresh hook ────────────────────────────────────────
+function usePullToRefresh(onRefresh: () => Promise<void> | void) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pulling, setPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const startYRef = useRef(0);
+  const isPullingRef = useRef(false);
+  const THRESHOLD = 80;
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (el.scrollTop <= 0) {
+        startYRef.current = e.touches[0].clientY;
+        isPullingRef.current = true;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isPullingRef.current) return;
+      const dy = e.touches[0].clientY - startYRef.current;
+      if (dy > 0 && el.scrollTop <= 0) {
+        e.preventDefault();
+        setPulling(true);
+        setPullDistance(Math.min(dy * 0.5, 120));
+      }
+    };
+
+    const onTouchEnd = async () => {
+      if (!isPullingRef.current) return;
+      isPullingRef.current = false;
+      if (pullDistance >= THRESHOLD) {
+        setRefreshing(true);
+        setPullDistance(THRESHOLD * 0.6);
+        await onRefresh();
+        setRefreshing(false);
+      }
+      setPulling(false);
+      setPullDistance(0);
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [pullDistance, onRefresh]);
+
+  const progress = Math.min(pullDistance / THRESHOLD, 1);
+
+  const indicator = (
+    <div
+      className="flex items-center justify-center overflow-hidden transition-all duration-200 md:hidden"
+      style={{ height: pulling || refreshing ? pullDistance : 0 }}
+    >
+      <div
+        className={`w-8 h-8 rounded-full border-2 border-accent flex items-center justify-center transition-transform ${refreshing ? 'animate-spin' : ''}`}
+        style={{ transform: `rotate(${progress * 360}deg)`, opacity: progress }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+      </div>
+    </div>
+  );
+
+  return { containerRef, indicator };
+}
+
 // ── Dashboard ──────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const scoreHistory = useMemo(() => generateScoreHistory(timeRangeDays[timeRange]), [timeRange]);
+  const handleRefresh = useCallback(async () => {
+    await new Promise(r => setTimeout(r, 800));
+    setRefreshKey(k => k + 1);
+  }, []);
 
+  const { containerRef, indicator } = usePullToRefresh(handleRefresh);
+
+  const scoreHistory = useMemo(() => generateScoreHistory(timeRangeDays[timeRange]), [timeRange, refreshKey]);
   const kpis = [
     { label: 'Agencies Monitored', value: totalAgencies, icon: <Activity className="w-5 h-5" />, sparkData: kpiSparklines.agencies, sparkColor: 'hsl(var(--accent))', link: '/agencies' },
     { label: 'Warning or Worse', value: warningOrWorse, icon: <AlertTriangle className="w-5 h-5" />, danger: true, sparkData: kpiSparklines.warnings, sparkColor: 'hsl(var(--destructive))', link: '/agencies?band=WARNING' },
@@ -188,7 +270,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <PageTransition>
-      <div className="space-y-5">
+      <div ref={containerRef} className="space-y-5 -m-4 md:-m-6 p-4 md:p-6 overflow-auto h-[calc(100vh-3.5rem)]">
+        {indicator}
         {/* ── KPI Bar with Sparklines ─────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
