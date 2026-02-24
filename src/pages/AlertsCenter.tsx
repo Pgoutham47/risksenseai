@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, AlertTriangle, Info, Eye, ArrowUpRight, CheckCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, Eye, ArrowUpRight, CheckCircle, Download } from 'lucide-react';
 import { alerts, type AlertSeverity } from '@/data/mockData';
 import { PageTransition } from '@/components/AnimatedComponents';
+import { toast } from '@/hooks/use-toast';
 
 const severityIcons: Record<AlertSeverity, React.ReactNode> = {
   CRITICAL: <AlertCircle className="w-5 h-5 text-destructive" />,
@@ -28,8 +29,38 @@ const AlertsCenter: React.FC = () => {
   const escalated = localAlerts.filter(a => a.escalated).length;
   const resolved = localAlerts.filter(a => a.acknowledged).length;
 
-  const acknowledge = (id: string) => setLocalAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a));
-  const escalate = (id: string) => setLocalAlerts(prev => prev.map(a => a.id === id ? { ...a, escalated: true } : a));
+  const acknowledge = (id: string) => {
+    setLocalAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a));
+    const alert = localAlerts.find(a => a.id === id);
+    toast({ title: 'Alert Acknowledged', description: `${alert?.type} for ${alert?.agencyName} has been acknowledged.` });
+  };
+
+  const escalate = (id: string) => {
+    setLocalAlerts(prev => prev.map(a => a.id === id ? { ...a, escalated: true } : a));
+    const alert = localAlerts.find(a => a.id === id);
+    toast({ title: 'Alert Escalated', description: `${alert?.type} for ${alert?.agencyName} has been escalated to the senior risk team.`, variant: 'destructive' });
+  };
+
+  const acknowledgeAll = () => {
+    const unackCount = localAlerts.filter(a => !a.acknowledged).length;
+    setLocalAlerts(prev => prev.map(a => ({ ...a, acknowledged: true })));
+    toast({ title: 'All Acknowledged', description: `${unackCount} alerts have been marked as acknowledged.` });
+  };
+
+  const exportAlerts = () => {
+    const csv = [
+      'ID,Severity,Agency,Type,Description,Timestamp,Acknowledged,Escalated',
+      ...filtered.map(a => `${a.id},${a.severity},${a.agencyName},${a.type},"${a.description}",${a.timestamp},${a.acknowledged},${a.escalated}`)
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `risksense-alerts-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Exported', description: `${filtered.length} alerts exported to CSV.` });
+  };
 
   return (
     <PageTransition>
@@ -48,19 +79,31 @@ const AlertsCenter: React.FC = () => {
           ))}
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-3">
-          <select value={sevFilter} onChange={e => setSevFilter(e.target.value as any)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40">
-            <option value="ALL">All Severity</option>
-            <option value="CRITICAL">Critical</option>
-            <option value="WARNING">Warning</option>
-            <option value="INFO">Info</option>
-          </select>
-          <select value={ackFilter} onChange={e => setAckFilter(e.target.value as any)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40">
-            <option value="ALL">All Status</option>
-            <option value="UNACK">Unacknowledged</option>
-            <option value="ACK">Acknowledged</option>
-          </select>
+        {/* Filters & Actions */}
+        <div className="flex flex-wrap gap-3 items-center justify-between">
+          <div className="flex gap-3">
+            <select value={sevFilter} onChange={e => setSevFilter(e.target.value as any)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40">
+              <option value="ALL">All Severity</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="WARNING">Warning</option>
+              <option value="INFO">Info</option>
+            </select>
+            <select value={ackFilter} onChange={e => setAckFilter(e.target.value as any)} className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40">
+              <option value="ALL">All Status</option>
+              <option value="UNACK">Unacknowledged</option>
+              <option value="ACK">Acknowledged</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            {unack > 0 && (
+              <button onClick={acknowledgeAll} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
+                <CheckCircle className="w-3.5 h-3.5" /> Ack All ({unack})
+              </button>
+            )}
+            <button onClick={exportAlerts} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Export CSV
+            </button>
+          </div>
         </div>
 
         {/* Alert Cards */}
@@ -72,7 +115,7 @@ const AlertsCenter: React.FC = () => {
             </div>
           )}
           {filtered.map(alert => (
-            <div key={alert.id} className={`panel p-5 flex gap-4 transition-opacity ${alert.acknowledged ? 'opacity-50' : ''}`}>
+            <div key={alert.id} className={`panel p-5 flex gap-4 transition-all ${alert.acknowledged ? 'opacity-50' : ''}`}>
               <div className="flex-shrink-0 mt-0.5">{severityIcons[alert.severity]}</div>
               <div className="flex-1 min-w-0 space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap">

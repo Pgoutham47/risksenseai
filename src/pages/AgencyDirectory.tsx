@@ -10,7 +10,12 @@ const AgencyDirectory: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [bandFilter, setBandFilter] = useState<'ALL' | Band>('ALL');
+  const initialBand = searchParams.get('band');
+  const [bandFilter, setBandFilter] = useState<'ALL' | Band>(
+    initialBand && ['CLEAR', 'CAUTION', 'WARNING', 'RESTRICTED', 'BLOCKED'].includes(initialBand) 
+      ? initialBand as Band 
+      : 'ALL'
+  );
   const [tenureFilter, setTenureFilter] = useState<'ALL' | 'NEW' | 'ESTABLISHED'>('ALL');
   const [sortKey, setSortKey] = useState<SortKey>('trustScore');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');

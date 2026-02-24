@@ -107,6 +107,7 @@ const generateFreshTimestamp = () => {
 };
 
 const LiveEventFeed: React.FC = () => {
+  const navigate = useNavigate();
   const [visibleEvents, setVisibleEvents] = useState(liveEvents.slice(0, VISIBLE_EVENTS));
   const [enteringId, setEnteringId] = useState<string | null>(null);
   const poolIndexRef = useRef(VISIBLE_EVENTS);
@@ -141,10 +142,14 @@ const LiveEventFeed: React.FC = () => {
         </span>
       </div>
       <div className="space-y-0 max-h-[260px] overflow-hidden pr-1">
-        {visibleEvents.map(ev => (
+        {visibleEvents.map(ev => {
+          // Extract agency ID from the event for navigation
+          const matchedAgency = agencies.find(a => a.name === ev.agencyName);
+          return (
           <div
             key={ev.id}
-            className={`flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0 hover:bg-accent/[0.03] rounded-md px-1 transition-all duration-500 ${
+            onClick={() => matchedAgency && navigate(`/agency/${matchedAgency.id}`)}
+            className={`flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0 hover:bg-accent/[0.03] rounded-md px-1 transition-all duration-500 ${matchedAgency ? 'cursor-pointer' : ''} ${
               enteringId === ev.id
                 ? 'animate-slide-in-event'
                 : ''
@@ -160,7 +165,8 @@ const LiveEventFeed: React.FC = () => {
             </div>
             <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">{ev.timestamp}</span>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -174,10 +180,10 @@ const Dashboard: React.FC = () => {
   const scoreHistory = useMemo(() => generateScoreHistory(timeRangeDays[timeRange]), [timeRange]);
 
   const kpis = [
-    { label: 'Agencies Monitored', value: totalAgencies, icon: <Activity className="w-5 h-5" />, sparkData: kpiSparklines.agencies, sparkColor: 'hsl(var(--accent))' },
-    { label: 'Warning or Worse', value: warningOrWorse, icon: <AlertTriangle className="w-5 h-5" />, danger: true, sparkData: kpiSparklines.warnings, sparkColor: 'hsl(var(--destructive))' },
-    { label: 'Alerts (24h)', value: 8, icon: <Zap className="w-5 h-5" />, sparkData: kpiSparklines.alerts, sparkColor: 'hsl(var(--accent))' },
-    { label: 'Credit Exposure', value: formatCurrency(totalExposure), icon: <CreditCard className="w-5 h-5" />, isString: true, sparkData: kpiSparklines.exposure, sparkColor: 'hsl(var(--accent))' },
+    { label: 'Agencies Monitored', value: totalAgencies, icon: <Activity className="w-5 h-5" />, sparkData: kpiSparklines.agencies, sparkColor: 'hsl(var(--accent))', link: '/agencies' },
+    { label: 'Warning or Worse', value: warningOrWorse, icon: <AlertTriangle className="w-5 h-5" />, danger: true, sparkData: kpiSparklines.warnings, sparkColor: 'hsl(var(--destructive))', link: '/agencies?band=WARNING' },
+    { label: 'Alerts (24h)', value: 8, icon: <Zap className="w-5 h-5" />, sparkData: kpiSparklines.alerts, sparkColor: 'hsl(var(--accent))', link: '/alerts' },
+    { label: 'Credit Exposure', value: formatCurrency(totalExposure), icon: <CreditCard className="w-5 h-5" />, isString: true, sparkData: kpiSparklines.exposure, sparkColor: 'hsl(var(--accent))', link: '/analytics' },
   ];
 
   return (
@@ -186,7 +192,7 @@ const Dashboard: React.FC = () => {
         {/* ── KPI Bar with Sparklines ─────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
-            <div key={i} className="kpi-card" style={{ animationDelay: `${i * 80}ms` }}>
+            <div key={i} className="kpi-card cursor-pointer" style={{ animationDelay: `${i * 80}ms` }} onClick={() => navigate(kpi.link)}>
               <div className="flex items-start justify-between mb-3">
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{kpi.label}</p>
                 <div className="p-2 rounded-lg" style={{ background: 'hsl(var(--accent) / 0.08)' }}>

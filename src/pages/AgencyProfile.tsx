@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { ArrowLeft, Clock, Users, MapPin, ChevronRight } from 'lucide-react';
 import { agencies, generateAgencyScoreHistory, getBandClass, getBandColor, formatCurrency, decisionHistory, type Band } from '@/data/mockData';
 import { AnimatedScore, SignalGauge, PageTransition } from '@/components/AnimatedComponents';
+import { toast } from '@/hooks/use-toast';
 
 const bandThresholds = [
   { min: 0, max: 15, band: 'BLOCKED' as Band, color: getBandColor('BLOCKED') },
@@ -19,10 +20,6 @@ const phaseDescriptions: Record<number, string> = {
   3: 'Crystallisation: high-value refundable bookings followed by rapid cancellations. Active chargeback threat confirmed.',
 };
 
-const chartTickStyle = { fill: 'hsl(215, 16%, 47%)', fontSize: 9 };
-const chartAxisStyle = { stroke: 'hsl(220, 13%, 89%)' };
-const chartTooltipStyle = { background: 'hsl(0, 0%, 100%)', border: '1px solid hsl(220, 13%, 89%)', borderRadius: 8, fontSize: 11, color: 'hsl(222, 47%, 11%)', boxShadow: '0 4px 12px hsl(0 0% 0% / 0.08)' };
-
 const AgencyProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -31,6 +28,7 @@ const AgencyProfile: React.FC = () => {
   const [overrideNotes, setOverrideNotes] = useState('');
   const [overrideBand, setOverrideBand] = useState<Band>('WARNING');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentBand, setCurrentBand] = useState<Band | null>(null);
 
   if (!agency) return (
     <PageTransition>
@@ -41,12 +39,24 @@ const AgencyProfile: React.FC = () => {
     </PageTransition>
   );
 
+  const displayBand = currentBand || agency.band;
   const scoreHistory = generateAgencyScoreHistory(agency.trustScore);
   const decisions = decisionHistory[agency.id] || [
     { timestamp: agency.lastUpdated, trustScore: agency.trustScore, band: agency.band, topSignals: [agency.signals[0]?.id || 'S1'], action: 'Automated assessment' },
   ];
 
   const nextBandUp = bandThresholds.find(b => b.min > agency.trustScore);
+
+  const handleConfirmOverride = () => {
+    setCurrentBand(overrideBand);
+    setShowConfirm(false);
+    setShowOverride(false);
+    toast({
+      title: 'Override Applied',
+      description: `${agency.name} band manually set to ${overrideBand}. This action has been logged in the audit trail.`,
+    });
+    setOverrideNotes('');
+  };
 
   return (
     <PageTransition>
@@ -64,7 +74,10 @@ const AgencyProfile: React.FC = () => {
                 <span className="font-mono text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded">{agency.id}</span>
               </div>
               <div className="flex flex-wrap gap-3 text-xs">
-                <span className={getBandClass(agency.band)}>{agency.band}</span>
+                <span className={getBandClass(displayBand)}>{displayBand}</span>
+                {currentBand && currentBand !== agency.band && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-accent/10 text-accent">MANUALLY OVERRIDDEN</span>
+                )}
                 <span className="text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {agency.tenure} days tenure</span>
                 <span className="text-muted-foreground flex items-center gap-1"><Users className="w-3 h-3" /> {agency.cohort}</span>
                 <span className="text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> Updated: {agency.lastUpdated}</span>
@@ -72,7 +85,7 @@ const AgencyProfile: React.FC = () => {
             </div>
             <div className="text-center">
               <p className="text-[11px] text-muted-foreground font-medium mb-1">TRUST SCORE</p>
-              <div className="text-5xl font-mono font-bold" style={{ color: getBandColor(agency.band) }}>
+              <div className="text-5xl font-mono font-bold" style={{ color: getBandColor(displayBand) }}>
                 <AnimatedScore value={agency.trustScore} />
               </div>
             </div>
@@ -82,7 +95,7 @@ const AgencyProfile: React.FC = () => {
               <div>
                 <div className="flex justify-between mb-1"><span className="text-muted-foreground">Utilization</span><span className="font-mono text-foreground font-semibold">{agency.utilization}%</span></div>
                 <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${agency.utilization}%`, background: agency.utilization > 70 ? 'hsl(0, 72%, 51%)' : 'hsl(222, 47%, 25%)' }} />
+                  <div className="h-full rounded-full transition-all" style={{ width: `${agency.utilization}%`, background: agency.utilization > 70 ? 'hsl(var(--destructive))' : 'hsl(var(--accent))' }} />
                 </div>
               </div>
             </div>
@@ -92,7 +105,7 @@ const AgencyProfile: React.FC = () => {
         {/* Counterfactual Guidance */}
         {nextBandUp && (
           <div className="panel p-6 border-l-4" style={{ borderLeftColor: getBandColor(nextBandUp.band) }}>
-            <h3 className="font-heading text-sm tracking-wider text-foreground mb-3">Recovery Guidance — Move from {agency.band} → {nextBandUp.band}</h3>
+            <h3 className="font-heading text-sm tracking-wider text-foreground mb-3">Recovery Guidance — Move from {displayBand} → {nextBandUp.band}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               {agency.signals.filter(s => s.score > 0.3).slice(0, 3).map(s => (
                 <div key={s.id} className="flex items-center justify-between bg-secondary/60 rounded-lg p-3">
@@ -141,13 +154,13 @@ const AgencyProfile: React.FC = () => {
               {bandThresholds.map(b => (
                 <ReferenceArea key={b.band} y1={b.min} y2={b.max} fill={b.color} fillOpacity={0.06} />
               ))}
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
-              <XAxis dataKey="date" tick={chartTickStyle} interval={10} axisLine={chartAxisStyle} />
-              <YAxis domain={[0, 100]} tick={chartTickStyle} axisLine={chartAxisStyle} />
-              <Tooltip contentStyle={chartTooltipStyle} />
-              <Line type="monotone" dataKey="score" stroke={getBandColor(agency.band)} strokeWidth={2} dot={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+              <XAxis dataKey="date" tick={{ fill: 'hsl(var(--chart-tick))', fontSize: 9 }} interval={10} axisLine={{ stroke: 'hsl(var(--chart-axis))' }} />
+              <YAxis domain={[0, 100]} tick={{ fill: 'hsl(var(--chart-tick))', fontSize: 9 }} axisLine={{ stroke: 'hsl(var(--chart-axis))' }} />
+              <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11, color: 'hsl(var(--foreground))' }} />
+              <Line type="monotone" dataKey="score" stroke={getBandColor(displayBand)} strokeWidth={2} dot={false} />
               {scoreHistory.filter(d => d.event).map((d, i) => (
-                <ReferenceLine key={i} x={d.date} stroke="hsl(0, 72%, 51%)" strokeDasharray="4 4" label={{ value: d.event || '', position: 'top', fill: 'hsl(215, 16%, 47%)', fontSize: 8 }} />
+                <ReferenceLine key={i} x={d.date} stroke="hsl(var(--destructive))" strokeDasharray="4 4" label={{ value: d.event || '', position: 'top', fill: 'hsl(var(--chart-tick))', fontSize: 8 }} />
               ))}
             </LineChart>
           </ResponsiveContainer>
@@ -207,8 +220,19 @@ const AgencyProfile: React.FC = () => {
                 </select>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setShowConfirm(true)} className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Confirm Override</button>
-                <button onClick={() => setShowOverride(false)} className="bg-secondary text-muted-foreground px-5 py-2.5 rounded-lg text-sm hover:text-foreground transition-colors">Cancel</button>
+                <button
+                  onClick={() => {
+                    if (!overrideNotes.trim()) {
+                      toast({ title: 'Notes Required', description: 'Please provide justification for the override.', variant: 'destructive' });
+                      return;
+                    }
+                    setShowConfirm(true);
+                  }}
+                  className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Confirm Override
+                </button>
+                <button onClick={() => { setShowOverride(false); setOverrideNotes(''); }} className="bg-secondary text-muted-foreground px-5 py-2.5 rounded-lg text-sm hover:text-foreground transition-colors">Cancel</button>
               </div>
             </div>
           )}
@@ -220,9 +244,13 @@ const AgencyProfile: React.FC = () => {
             <div className="panel p-6 max-w-md w-full mx-4 space-y-4 shadow-2xl" onClick={e => e.stopPropagation()}>
               <h3 className="font-heading text-lg tracking-wider text-foreground">Confirm Override</h3>
               <p className="text-sm text-muted-foreground">You are about to manually override {agency.name}'s band to <span className={getBandClass(overrideBand)}>{overrideBand}</span>. This action will be logged.</p>
+              <div className="bg-secondary/50 rounded-lg p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">Analyst Notes:</p>
+                <p>{overrideNotes}</p>
+              </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setShowConfirm(false)} className="bg-secondary text-muted-foreground px-4 py-2 rounded-lg text-sm hover:text-foreground">Cancel</button>
-                <button onClick={() => { setShowConfirm(false); setShowOverride(false); }} className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-destructive/90">Confirm</button>
+                <button onClick={handleConfirmOverride} className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-destructive/90">Confirm</button>
               </div>
             </div>
           </div>

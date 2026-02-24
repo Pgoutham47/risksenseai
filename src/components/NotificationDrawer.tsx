@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Bell, CheckCheck, Trash2, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
+import { type AlertSeverity } from '@/data/mockData';
 
 interface NotificationDrawerProps {
   open: boolean;
@@ -35,12 +37,15 @@ const severityConfig: Record<string, { icon: React.ReactNode; bg: string; border
   },
 };
 
-const NotificationItem: React.FC<{ notification: Notification; onRead: (id: string) => void }> = ({ notification, onRead }) => {
+const NotificationItem: React.FC<{ notification: Notification; onRead: (id: string) => void; onNavigate: (agencyId: string) => void }> = ({ notification, onRead, onNavigate }) => {
   const config = severityConfig[notification.severity] || severityConfig.INFO;
 
   return (
     <button
-      onClick={() => onRead(notification.id)}
+      onClick={() => {
+        onRead(notification.id);
+        onNavigate(notification.agencyId);
+      }}
       className={`w-full text-left p-3 border-l-[3px] ${config.border} ${!notification.read ? config.bg : 'bg-transparent'} hover:bg-secondary/50 transition-colors`}
     >
       <div className="flex items-start gap-2.5">
@@ -64,8 +69,28 @@ const NotificationItem: React.FC<{ notification: Notification; onRead: (id: stri
   );
 };
 
+type FilterType = 'All' | AlertSeverity;
+
 const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ open, onClose }) => {
+  const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
+  const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+
+  const filteredNotifications = activeFilter === 'All'
+    ? notifications
+    : notifications.filter(n => n.severity === activeFilter);
+
+  const handleNavigate = (agencyId: string) => {
+    onClose();
+    navigate(`/agency/${agencyId}`);
+  };
+
+  const filterMap: { label: string; value: FilterType }[] = [
+    { label: 'All', value: 'All' },
+    { label: 'Critical', value: 'CRITICAL' },
+    { label: 'Warning', value: 'WARNING' },
+    { label: 'Info', value: 'INFO' },
+  ];
 
   return (
     <>
@@ -119,28 +144,33 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ open, onClose }
           </div>
         </div>
 
-        {/* Filter chips */}
+        {/* Filter chips — now functional */}
         <div className="px-4 py-2 border-b border-border flex gap-1.5">
-          {['All', 'Critical', 'Warning', 'Info'].map(filter => (
-            <span
-              key={filter}
-              className="text-[10px] font-medium px-2 py-1 rounded-full bg-secondary text-muted-foreground cursor-default"
+          {filterMap.map(f => (
+            <button
+              key={f.value}
+              onClick={() => setActiveFilter(f.value)}
+              className={`text-[10px] font-medium px-2 py-1 rounded-full transition-colors ${
+                activeFilter === f.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+              }`}
             >
-              {filter}
-            </span>
+              {f.label}
+            </button>
           ))}
         </div>
 
         {/* Notification list */}
         <div className="overflow-y-auto h-[calc(100%-110px)] divide-y divide-border/50">
-          {notifications.length === 0 ? (
+          {filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
               <Bell className="w-8 h-8 mb-2 opacity-30" />
-              <p className="text-sm">No notifications</p>
+              <p className="text-sm">{activeFilter === 'All' ? 'No notifications' : `No ${activeFilter.toLowerCase()} notifications`}</p>
             </div>
           ) : (
-            notifications.map(n => (
-              <NotificationItem key={n.id} notification={n} onRead={markAsRead} />
+            filteredNotifications.map(n => (
+              <NotificationItem key={n.id} notification={n} onRead={markAsRead} onNavigate={handleNavigate} />
             ))
           )}
         </div>
