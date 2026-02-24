@@ -389,4 +389,13 @@
     animation: slide-in-event 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     background: hsl(var(--gold) / 0.04);
   }
+
+  /* Walkthrough highlight */
+  .walkthrough-highlight {
+    position: relative;
+    z-index: 72;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 0 4px hsl(var(--gold) / 0.4), 0 0 20px 4px hsl(var(--gold) / 0.15);
+    transition: box-shadow 0.3s ease;
+  }
 }

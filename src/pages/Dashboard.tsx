@@ -7,9 +7,9 @@ import {
 import {
   AlertTriangle, Activity, TrendingDown, TrendingUp, CreditCard,
   Zap, XCircle, Clock, Plane, FileText, ShieldAlert, CheckCircle,
-  ArrowUpRight, MapPin
+  ArrowUpRight, MapPin, HelpCircle, X, ChevronRight, ChevronLeft
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   agencies, liveEvents, generateScoreHistory, generateHeatmapData,
   getBandClass, getBandColor, formatCurrency, type Band
@@ -336,12 +336,114 @@ function usePullToRefresh(onRefresh: () => Promise<void> | void) {
   return { containerRef, indicator };
 }
 
+// ── Walkthrough Steps ───────────────────────────────────────────
+const WALKTHROUGH_STEPS = [
+  {
+    target: 'kpi-strip',
+    title: 'KPI Overview',
+    description: 'These cards show your key metrics at a glance. Click any card to drill into its detail page — Agencies, Alerts, or Analytics.',
+    position: 'bottom' as const,
+  },
+  {
+    target: 'tab-bar',
+    title: 'Dashboard Tabs',
+    description: 'Switch between Overview, Signals, Trends, and Risk Map views to explore different angles of your portfolio risk.',
+    position: 'bottom' as const,
+  },
+  {
+    target: 'risk-donut',
+    title: 'Risk Distribution',
+    description: 'This donut chart breaks down your agencies by risk band. Hover over segments to see counts.',
+    position: 'right' as const,
+  },
+  {
+    target: 'at-risk-table',
+    title: 'Top At-Risk Agencies',
+    description: 'The 5 lowest-scoring agencies are flagged here. Click any row to view the full agency profile with signal breakdown.',
+    position: 'top' as const,
+  },
+  {
+    target: 'live-feed',
+    title: 'Live Event Feed',
+    description: 'Real-time events stream in every 4 seconds. Click an event to jump to the associated agency profile.',
+    position: 'left' as const,
+  },
+];
+
+const Walkthrough: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const [step, setStep] = useState(0);
+  const current = WALKTHROUGH_STEPS[step];
+  const total = WALKTHROUGH_STEPS.length;
+
+  useEffect(() => {
+    const el = document.getElementById(current.target);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('walkthrough-highlight');
+      return () => el.classList.remove('walkthrough-highlight');
+    }
+  }, [step, current.target]);
+
+  const next = () => step < total - 1 ? setStep(step + 1) : onClose();
+  const prev = () => step > 0 && setStep(step - 1);
+
+  return (
+    <>
+      {/* Overlay */}
+      <div className="fixed inset-0 bg-foreground/30 backdrop-blur-[2px] z-[70]" onClick={onClose} />
+      {/* Tooltip */}
+      <motion.div
+        key={step}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="fixed z-[71] bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md"
+      >
+        <div className="panel-glass border border-border shadow-2xl p-5 mx-4">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                {step + 1}
+              </div>
+              <h3 className="text-sm font-heading tracking-wider text-foreground">{current.title}</h3>
+            </div>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-4">{current.description}</p>
+          <div className="flex items-center justify-between">
+            {/* Progress dots */}
+            <div className="flex items-center gap-1.5">
+              {WALKTHROUGH_STEPS.map((_, i) => (
+                <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === step ? 'bg-primary' : i < step ? 'bg-accent/50' : 'bg-muted-foreground/20'}`} />
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              {step > 0 && (
+                <button onClick={prev} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors press-scale">
+                  <ChevronLeft className="w-3 h-3" /> Back
+                </button>
+              )}
+              <button onClick={next} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors press-scale">
+                {step === total - 1 ? 'Done' : 'Next'} {step < total - 1 && <ChevronRight className="w-3 h-3" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
 // ── Dashboard ──────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showWalkthrough, setShowWalkthrough] = useState(() => {
+    return !localStorage.getItem('dashboard-walkthrough-done');
+  });
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 1200);
@@ -358,6 +460,11 @@ const Dashboard: React.FC = () => {
   const { containerRef, indicator } = usePullToRefresh(handleRefresh);
 
   const scoreHistory = useMemo(() => generateScoreHistory(timeRangeDays[timeRange]), [timeRange, refreshKey]);
+
+  const closeWalkthrough = useCallback(() => {
+    setShowWalkthrough(false);
+    localStorage.setItem('dashboard-walkthrough-done', '1');
+  }, []);
 
   const kpis = [
     { label: 'Agencies Monitored', value: totalAgencies, icon: <Activity className="w-5 h-5" />, sparkData: kpiSparklines.agencies, sparkColor: 'hsl(var(--accent))', link: '/agencies', trend: '+2', trendUp: true },
@@ -379,8 +486,19 @@ const Dashboard: React.FC = () => {
       <div ref={containerRef} className="space-y-5 -m-4 md:-m-6 p-4 md:p-6 overflow-auto h-[calc(100vh-3.5rem)]">
         {indicator}
 
+        {/* Walkthrough trigger */}
+        <div className="flex justify-end -mb-3">
+          <button
+            onClick={() => setShowWalkthrough(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors press-scale"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            Tour
+          </button>
+        </div>
+
         {/* ── Full-width KPI Hero Strip ─────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div id="kpi-strip" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi, i) => (
             <motion.div
               key={i}
@@ -422,7 +540,7 @@ const Dashboard: React.FC = () => {
 
         {/* ── Tabbed Dashboard Sections ─────────────────────────── */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full justify-start bg-muted/50 p-1 rounded-xl mb-5 overflow-x-auto">
+          <TabsList id="tab-bar" className="w-full justify-start bg-muted/50 p-1 rounded-xl mb-5 overflow-x-auto">
             <TabsTrigger value="overview" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
               Overview
             </TabsTrigger>
@@ -441,7 +559,7 @@ const Dashboard: React.FC = () => {
           <TabsContent value="overview" className="space-y-5 mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               {/* Risk Distribution — Donut */}
-              <div className="lg:col-span-4 panel-glass p-6">
+              <div id="risk-donut" className="lg:col-span-4 panel-glass p-6">
                 <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Risk Distribution</h3>
                 <div className="flex flex-col items-center">
                   <div className="relative">
@@ -470,7 +588,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Top 5 At-Risk */}
-              <div className="lg:col-span-8 panel-glass p-6">
+              <div id="at-risk-table" className="lg:col-span-8 panel-glass p-6">
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Top 5 At-Risk Agencies</h3>
                   <button onClick={() => navigate('/agencies')} className="flex items-center gap-1 text-[11px] text-accent hover:text-accent/80 transition-colors font-medium uppercase tracking-wider">
@@ -516,7 +634,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Live Event Feed */}
-              <div className="lg:col-span-5">
+              <div id="live-feed" className="lg:col-span-5">
                 <LiveEventFeed />
               </div>
 
@@ -732,6 +850,10 @@ const Dashboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      {/* Walkthrough overlay */}
+      <AnimatePresence>
+        {showWalkthrough && !loading && <Walkthrough onClose={closeWalkthrough} />}
+      </AnimatePresence>
     </PageTransition>
   );
 };
