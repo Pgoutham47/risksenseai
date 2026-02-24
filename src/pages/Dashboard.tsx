@@ -435,15 +435,100 @@ const Walkthrough: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
+// ── Welcome Modal ───────────────────────────────────────────────
+const FEATURES = [
+  { icon: <Activity className="w-5 h-5" />, title: 'Real-Time Monitoring', description: 'Track agency risk scores, signals, and credit exposure as they update in real time.' },
+  { icon: <Zap className="w-5 h-5" />, title: '8 Fraud Signals', description: 'Booking velocity, refundable ratio, settlement delay, and more — weighted and scored automatically.' },
+  { icon: <AlertTriangle className="w-5 h-5" />, title: 'Smart Alerts', description: 'Get notified on score drops, phase escalations, and threshold breaches with severity-based routing.' },
+  { icon: <CreditCard className="w-5 h-5" />, title: 'Credit Decisioning', description: 'Automated credit actions tied to trust bands — from full access to frozen accounts.' },
+];
+
+const WelcomeModal: React.FC<{ onClose: () => void; onStartTour: () => void }> = ({ onClose, onStartTour }) => {
+  const [step, setStep] = useState(0); // 0 = welcome, 1 = features
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-[80]"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 20 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className="fixed inset-0 z-[81] flex items-center justify-center p-4"
+      >
+        <div className="panel-glass border border-border shadow-2xl w-full max-w-lg overflow-hidden">
+          <AnimatePresence mode="wait">
+            {step === 0 ? (
+              <motion.div key="welcome" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-8 text-center">
+                {/* Logo */}
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center mx-auto mb-5 shadow-sm">
+                  <ShieldAlert className="w-7 h-7 text-accent" />
+                </div>
+                <h2 className="font-heading text-xl tracking-wider text-foreground mb-2">Welcome to RiskSense AI</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                  Your intelligent risk monitoring platform for real-time agency fraud detection, credit decisioning, and portfolio management.
+                </p>
+                <div className="mt-6 flex items-center justify-center gap-3">
+                  <button onClick={() => setStep(1)} className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors press-scale">
+                    Explore Features
+                  </button>
+                  <button onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Skip
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div key="features" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="p-6">
+                <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">Platform Capabilities</h3>
+                <div className="space-y-3 mb-6">
+                  {FEATURES.map((f, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.08 }}
+                      className="flex items-start gap-3 p-3 rounded-xl bg-secondary/40 hover:bg-secondary/60 transition-colors"
+                    >
+                      <div className="p-2 rounded-lg bg-accent/10 text-accent shrink-0 mt-0.5">{f.icon}</div>
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">{f.title}</p>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{f.description}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <button onClick={() => setStep(0)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">← Back</button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                      Dismiss
+                    </button>
+                    <button onClick={() => { onClose(); onStartTour(); }} className="px-4 py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors press-scale">
+                      Start Tour →
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
 // ── Dashboard ──────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [showWalkthrough, setShowWalkthrough] = useState(() => {
-    return !localStorage.getItem('dashboard-walkthrough-done');
-  });
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('dashboard-welcome-done'));
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 1200);
@@ -460,6 +545,15 @@ const Dashboard: React.FC = () => {
   const { containerRef, indicator } = usePullToRefresh(handleRefresh);
 
   const scoreHistory = useMemo(() => generateScoreHistory(timeRangeDays[timeRange]), [timeRange, refreshKey]);
+
+  const closeWelcome = useCallback(() => {
+    setShowWelcome(false);
+    localStorage.setItem('dashboard-welcome-done', '1');
+  }, []);
+
+  const startTour = useCallback(() => {
+    setShowWalkthrough(true);
+  }, []);
 
   const closeWalkthrough = useCallback(() => {
     setShowWalkthrough(false);
@@ -850,9 +944,13 @@ const Dashboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      {/* Welcome modal */}
+      <AnimatePresence>
+        {showWelcome && !loading && <WelcomeModal onClose={closeWelcome} onStartTour={() => { closeWelcome(); startTour(); }} />}
+      </AnimatePresence>
       {/* Walkthrough overlay */}
       <AnimatePresence>
-        {showWalkthrough && !loading && <Walkthrough onClose={closeWalkthrough} />}
+        {showWalkthrough && !loading && !showWelcome && <Walkthrough onClose={closeWalkthrough} />}
       </AnimatePresence>
     </PageTransition>
   );
