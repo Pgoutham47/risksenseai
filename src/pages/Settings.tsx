@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, Wifi, RotateCcw, Sun, Moon, Monitor } from 'lucide-react';
 import { SIGNAL_DEFINITIONS } from '@/data/mockData';
 import { PageTransition } from '@/components/AnimatedComponents';
 import { toast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
+import { useTheme } from '@/hooks/useTheme';
 
 const defaultWeights = [18, 15, 12, 13, 14, 8, 10, 10];
 const defaultThresholds = { BLOCKED: 15, RESTRICTED: 35, WARNING: 55, CAUTION: 75 };
@@ -18,14 +18,7 @@ const Settings: React.FC = () => {
   const [tenurePeriod, setTenurePeriod] = useState(90);
   const [saved, setSaved] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    return document.documentElement.classList.contains('dark');
-  });
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+  const { mode: themeMode, setMode: setThemeMode, isDark } = useTheme();
 
   const totalWeight = weights.reduce((s, w) => s + w, 0);
 
@@ -128,15 +121,26 @@ const Settings: React.FC = () => {
         {/* Appearance */}
         <div className="panel p-6">
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Appearance</h3>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              {darkMode ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-gold" />}
-              <div>
-                <span className="text-sm text-foreground font-medium block">Dark Mode</span>
-                <span className="text-[11px] text-muted-foreground">Switch between light and dark theme</span>
-              </div>
-            </div>
-            <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+          <p className="text-[11px] text-muted-foreground mb-3">Choose your preferred theme. System mode follows your OS preference.</p>
+          <div className="flex gap-2">
+            {([
+              { value: 'light' as const, icon: Sun, label: 'Light' },
+              { value: 'dark' as const, icon: Moon, label: 'Dark' },
+              { value: 'system' as const, icon: Monitor, label: 'System' },
+            ]).map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setThemeMode(opt.value)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border ${
+                  themeMode === opt.value
+                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                    : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
+                }`}
+              >
+                <opt.icon className="w-4 h-4" />
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
