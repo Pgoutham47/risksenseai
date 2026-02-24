@@ -263,10 +263,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {!collapsed && <p className="text-[10px] text-sidebar-foreground/50 px-1">Last sync: 2 min ago</p>}
         <button
           onClick={() => setDarkMode(!darkMode)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
         >
-          {darkMode ? <Sun className="w-4 h-4 flex-shrink-0" /> : <Moon className="w-4 h-4 flex-shrink-0" />}
-          {!collapsed && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
+          <div className="flex items-center gap-2">
+            {darkMode ? <Moon className="w-4 h-4 flex-shrink-0" /> : <Sun className="w-4 h-4 flex-shrink-0" />}
+            {!collapsed && <span>{darkMode ? 'Dark' : 'Light'}</span>}
+          </div>
+          {!collapsed && (
+            <div className={`w-9 h-[20px] rounded-full transition-colors relative ${darkMode ? 'bg-primary' : 'bg-muted'}`}>
+              <span className={`absolute top-[3px] w-[14px] h-[14px] rounded-full transition-transform shadow-sm ${darkMode ? 'left-[19px] bg-primary-foreground' : 'left-[3px] bg-muted-foreground'}`} />
+            </div>
+          )}
         </button>
         <button
           onClick={() => navigate('/')}
