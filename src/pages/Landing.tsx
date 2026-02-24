@@ -79,127 +79,72 @@ const Landing: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative px-6 md:px-12 lg:px-20 pt-20 md:pt-28 pb-20 md:pb-32">
-        {/* Background gradient orbs */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full opacity-[0.06]" style={{ background: 'radial-gradient(circle, hsl(38 60% 50%), transparent 70%)' }} />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.04]" style={{ background: 'radial-gradient(circle, hsl(38 60% 50%), transparent 70%)' }} />
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url(/images/hero-bg.png)' }}
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+        {/* Bottom gradient fade into page */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+        {/* Accent glow */}
+        <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] rounded-full opacity-[0.08]" style={{ background: 'radial-gradient(circle, hsl(38 60% 55%), transparent 70%)' }} />
 
-        <div className="relative max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            {/* Left: Copy */}
-            <div>
-              <motion.div {...fadeUp(0)}>
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-accent/20 bg-accent/5 mb-6">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                  <span className="text-xs font-semibold text-accent tracking-wide">AI-Powered Risk Intelligence</span>
-                </div>
-              </motion.div>
-
-              <motion.h1 {...fadeUp(0.1)} className="font-heading text-4xl md:text-5xl xl:text-6xl text-foreground leading-[1.1] mb-6">
-                Protect Your Revenue.<br />
-                <span className="text-accent">Outsmart Fraud.</span>
-              </motion.h1>
-
-              <motion.p {...fadeUp(0.2)} className="text-muted-foreground text-base md:text-lg max-w-lg leading-relaxed mb-8">
-                Enterprise-grade AI platform for real-time agency monitoring, trust scoring, and fraud detection — unified in one powerful command center.
-              </motion.p>
-
-              <motion.div {...fadeUp(0.3)} className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <button
-                  onClick={() => navigate('/login')}
-                  className="h-12 px-8 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(38 60% 50%), hsl(30 55% 42%))',
-                    color: 'hsl(25 35% 10%)',
-                  }}
-                >
-                  Access Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => { const el = document.getElementById('features'); el?.scrollIntoView({ behavior: 'smooth' }); }}
-                  className="h-12 px-6 rounded-xl bg-secondary text-foreground text-sm font-semibold flex items-center gap-2 hover:bg-secondary/80 transition-all"
-                >
-                  Explore Features
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </motion.div>
-            </div>
-
-            {/* Right: Dashboard Preview Card */}
-            <motion.div {...fadeUp(0.25)} className="relative hidden lg:block">
-              <div className="rounded-2xl border border-border bg-card p-6 shadow-xl" style={{ boxShadow: '0 20px 60px -12px hsl(25 30% 15% / 0.15)' }}>
-                {/* Mini dashboard mockup */}
-                <div className="flex items-center gap-2 mb-5">
-                  <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                  <div className="w-3 h-3 rounded-full bg-band-caution/60" />
-                  <div className="w-3 h-3 rounded-full bg-band-clear/60" />
-                  <span className="ml-2 text-[10px] font-mono text-muted-foreground">Command Center</span>
-                </div>
-                {/* KPI row */}
-                <div className="grid grid-cols-3 gap-3 mb-5">
-                  {[
-                    { label: 'Agencies', val: '500+', icon: Building2 },
-                    { label: 'Alerts', val: '24', icon: Bell },
-                    { label: 'Score Avg', val: '72', icon: TrendingUp },
-                  ].map((k, i) => (
-                    <div key={i} className="rounded-lg border border-border bg-background p-3">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[9px] text-muted-foreground uppercase tracking-wider">{k.label}</span>
-                        <k.icon className="w-3 h-3 text-accent/60" />
-                      </div>
-                      <span className="font-mono text-lg font-bold text-foreground">{k.val}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Chart placeholder */}
-                <div className="rounded-lg border border-border bg-background p-4 mb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-heading text-muted-foreground tracking-wider">TRUST SCORE TREND</span>
-                    <span className="text-[9px] text-accent font-semibold">+4.2%</span>
-                  </div>
-                  <div className="flex items-end gap-1 h-16">
-                    {[35, 42, 38, 55, 48, 62, 58, 65, 72, 68, 75, 78].map((h, i) => (
-                      <motion.div
-                        key={i}
-                        className="flex-1 rounded-sm"
-                        style={{ background: `linear-gradient(to top, hsl(38 60% 50% / 0.3), hsl(38 60% 50% / 0.7))` }}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${h}%` }}
-                        transition={{ duration: 0.5, delay: 0.5 + i * 0.05 }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                {/* Status bar */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-band-clear pulse-live" />
-                    <span className="text-[10px] text-muted-foreground">Live Monitoring</span>
-                  </div>
-                  <span className="text-[9px] font-mono text-muted-foreground/60">Updated 2s ago</span>
-                </div>
+        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12 lg:px-20 py-24 md:py-32 w-full">
+          <div className="max-w-2xl">
+            <motion.div {...fadeUp(0)}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 bg-white/5 backdrop-blur-md mb-8">
+                <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                <span className="text-xs font-semibold text-accent tracking-wide">AI-Powered Risk Intelligence</span>
               </div>
-              {/* Floating accent */}
-              <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full opacity-20" style={{ background: 'radial-gradient(circle, hsl(38 60% 50%), transparent 70%)' }} />
+            </motion.div>
+
+            <motion.h1 {...fadeUp(0.1)} className="font-heading text-4xl md:text-5xl xl:text-[3.5rem] leading-[1.1] mb-6" style={{ color: 'hsl(0 0% 97%)' }}>
+              Protect Your Revenue.<br />
+              <span className="text-accent">Outsmart Fraud.</span>
+            </motion.h1>
+
+            <motion.p {...fadeUp(0.2)} className="text-base md:text-lg max-w-lg leading-relaxed mb-10" style={{ color: 'hsl(0 0% 75%)' }}>
+              Enterprise-grade AI platform for real-time agency monitoring, trust scoring, and fraud detection — unified in one powerful command center.
+            </motion.p>
+
+            <motion.div {...fadeUp(0.3)} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <button
+                onClick={() => navigate('/login')}
+                className="h-12 px-8 rounded-xl text-sm font-bold flex items-center gap-2.5 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                style={{
+                  background: 'linear-gradient(135deg, hsl(38 60% 50%), hsl(30 55% 42%))',
+                  color: 'hsl(25 35% 10%)',
+                }}
+              >
+                Access Dashboard
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => { const el = document.getElementById('features'); el?.scrollIntoView({ behavior: 'smooth' }); }}
+                className="h-12 px-6 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all border border-white/15 backdrop-blur-sm hover:bg-white/10"
+                style={{ color: 'hsl(0 0% 90%)' }}
+              >
+                Explore Features
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </motion.div>
+
+            {/* Floating stats row */}
+            <motion.div {...fadeUp(0.45)} className="flex flex-wrap gap-6 mt-14">
+              {stats.map((s, i) => (
+                <div key={i} className="text-left">
+                  <p className="font-mono text-xl md:text-2xl font-bold text-accent">{s.value}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'hsl(0 0% 55%)' }}>{s.label}</p>
+                </div>
+              ))}
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Stats Bar */}
-      <section id="stats" className="relative border-y border-border" style={{ background: 'linear-gradient(135deg, hsl(25 30% 12%), hsl(25 28% 16%))' }}>
-        <div className="max-w-6xl mx-auto px-6 md:px-12 lg:px-20 py-12 md:py-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-            {stats.map((s, i) => (
-              <motion.div key={i} {...fadeUp(0.1 * i)} className="text-center">
-                <p className="font-mono text-3xl md:text-4xl font-bold mb-1.5" style={{ color: 'hsl(38 55% 65%)' }}>{s.value}</p>
-                <p className="text-sm" style={{ color: 'hsl(30 15% 60%)' }}>{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Features Grid */}
       <section id="features" className="px-6 md:px-12 lg:px-20 py-20 md:py-28">
