@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -17,12 +17,12 @@ const AnimatedBar: React.FC<{ label: string; value: number; delay: number }> = (
     return () => clearTimeout(t);
   }, [value, delay]);
   return (
-    <div className="mb-2">
-      <div className="flex justify-between mb-1">
-        <span style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted }}>{label}</span>
-        <span style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.danger }}>{value.toFixed(2)}</span>
+    <div className="mb-3">
+      <div className="flex justify-between mb-1.5">
+        <span style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.mutedLight }}>{label}</span>
+        <span style={{ fontFamily: fonts.mono, fontSize: 12, fontWeight: 700, color: colors.danger }}>{value.toFixed(2)}</span>
       </div>
-      <div className="w-full h-1.5 rounded-full" style={{ background: colors.border }}>
+      <div className="w-full h-2 rounded-full" style={{ background: colors.border }}>
         <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${width}%`, background: `linear-gradient(90deg, ${colors.danger}, ${colors.amber})` }} />
       </div>
     </div>
@@ -39,8 +39,8 @@ const LandingHero: React.FC = () => {
         backgroundImage: `linear-gradient(${colors.amber}20 1px, transparent 1px), linear-gradient(90deg, ${colors.amber}20 1px, transparent 1px)`,
         backgroundSize: '60px 60px',
       }} />
-      {/* Amber glow top-right */}
-      <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full" style={{ background: `radial-gradient(circle, ${colors.amberGlow}, transparent 70%)` }} />
+      {/* Amber glow top-right — larger */}
+      <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full" style={{ background: `radial-gradient(circle, ${colors.amberGlow}, transparent 70%)` }} />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 lg:px-20 py-20 w-full">
         <div className="grid lg:grid-cols-5 gap-12 lg:gap-16 items-center">
@@ -65,69 +65,81 @@ const LandingHero: React.FC = () => {
               <button onClick={() => navigate('/login')} className="h-13 px-8 rounded-lg font-bold text-sm flex items-center gap-2.5 transition-all hover:-translate-y-0.5" style={{ background: colors.amber, color: colors.bg, fontFamily: fonts.body, boxShadow: `0 0 30px ${colors.amberDim}` }}>
                 See Live Dashboard <ArrowRight className="w-4 h-4" />
               </button>
-              <button className="h-13 px-8 rounded-lg font-semibold text-sm flex items-center gap-2.5 border transition-all hover:bg-white/5" style={{ borderColor: colors.border, color: colors.mutedLight, fontFamily: fonts.body }}>
+              <button className="h-13 px-8 rounded-lg font-semibold text-sm flex items-center gap-2.5 border transition-all hover:bg-white/10" style={{ borderColor: '#ffffff30', background: 'rgba(255,255,255,0.06)', color: colors.mutedLight, fontFamily: fonts.body }}>
                 <FileText className="w-4 h-4" /> Read the Documentation
               </button>
             </motion.div>
 
-            <motion.div {...fadeUp(0.4)} className="flex flex-wrap gap-8 mt-12 pt-8" style={{ borderTop: `1px solid ${colors.border}` }}>
+            <motion.div {...fadeUp(0.4)} className="flex flex-wrap gap-10 mt-12 pt-8" style={{ borderTop: `1px solid ${colors.border}` }}>
               {[
                 { val: '21 Days', label: 'Early chargeback warning' },
                 { val: '8 Signals', label: 'Continuous monitoring' },
                 { val: '15 Min', label: 'Score refresh cycle' },
               ].map((s, i) => (
                 <div key={i}>
-                  <p style={{ fontFamily: fonts.mono, fontSize: 22, fontWeight: 700, color: colors.amber }}>{s.val}</p>
-                  <p style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2 }}>{s.label}</p>
+                  <p style={{ fontFamily: fonts.mono, fontSize: 24, fontWeight: 700, color: colors.amber }}>{s.val}</p>
+                  <p style={{ fontFamily: fonts.body, fontSize: 13, color: colors.mutedLight, marginTop: 4 }}>{s.label}</p>
                 </div>
               ))}
             </motion.div>
           </div>
 
-          {/* Right — Trust Score Card */}
-          <motion.div {...fadeUp(0.25)} className="lg:col-span-2 relative hidden lg:block">
+          {/* Right — Trust Score Card (larger, 3D tilt) */}
+          <motion.div {...fadeUp(0.25)} className="lg:col-span-2 relative hidden lg:block" style={{ perspective: '1200px' }}>
+            {/* Soft glow behind card */}
+            <div className="absolute inset-0 -m-8 rounded-3xl" style={{ background: `radial-gradient(ellipse at center, ${colors.amberGlow}, transparent 70%)` }} />
+
             {/* Blurred background cards */}
-            <div className="absolute -top-8 -left-8 w-48 h-28 rounded-xl border opacity-30 blur-[2px]" style={{ background: colors.bgCard, borderColor: colors.border }}>
-              <div className="p-3">
-                <p style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted }}>TravelMax Ltd</p>
-                <p style={{ fontFamily: fonts.mono, fontSize: 24, fontWeight: 700, color: colors.success }}>78</p>
+            <div className="absolute -top-10 -left-10 w-56 h-32 rounded-xl border opacity-30 blur-[2px]" style={{ background: colors.bgCard, borderColor: colors.border }}>
+              <div className="p-4">
+                <p style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted }}>TravelMax Ltd</p>
+                <p style={{ fontFamily: fonts.mono, fontSize: 28, fontWeight: 700, color: colors.success }}>78</p>
               </div>
             </div>
-            <div className="absolute -bottom-6 -right-6 w-44 h-24 rounded-xl border opacity-20 blur-[3px]" style={{ background: colors.bgCard, borderColor: colors.border }}>
-              <div className="p-3">
-                <p style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted }}>QuickBook Agency</p>
-                <p style={{ fontFamily: fonts.mono, fontSize: 24, fontWeight: 700, color: '#E8B839' }}>58</p>
+            <div className="absolute -bottom-8 -right-8 w-52 h-28 rounded-xl border opacity-20 blur-[3px]" style={{ background: colors.bgCard, borderColor: colors.border }}>
+              <div className="p-4">
+                <p style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted }}>QuickBook Agency</p>
+                <p style={{ fontFamily: fonts.mono, fontSize: 28, fontWeight: 700, color: '#E8B839' }}>58</p>
               </div>
             </div>
 
-            {/* Main card */}
-            <div className="relative rounded-2xl border p-6 animate-pulse-glow" style={{ background: colors.bgCard, borderColor: colors.borderAmber, boxShadow: `0 0 40px ${colors.amberGlow}, 0 20px 60px rgba(0,0,0,0.5)` }}>
-              <div className="flex items-center justify-between mb-5">
+            {/* Main card — larger with 3D tilt */}
+            <div
+              className="relative rounded-2xl border p-8 animate-pulse-glow"
+              style={{
+                background: colors.bgCard,
+                borderColor: colors.borderAmber,
+                boxShadow: `0 0 60px ${colors.amberGlow}, 0 25px 80px rgba(0,0,0,0.6)`,
+                transform: 'rotateY(-4deg) rotateX(2deg)',
+                transformStyle: 'preserve-3d',
+              }}
+            >
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <p style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Agency Trust Score</p>
-                  <p style={{ fontFamily: fonts.body, fontSize: 16, fontWeight: 700, color: colors.white, marginTop: 4 }}>SkyTravel Pvt Ltd</p>
+                  <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Agency Trust Score</p>
+                  <p style={{ fontFamily: fonts.body, fontSize: 18, fontWeight: 700, color: colors.white, marginTop: 4 }}>SkyTravel Pvt Ltd</p>
                 </div>
-                <span className="px-3 py-1 rounded-md text-xs font-bold" style={{ background: `${colors.danger}20`, color: colors.danger, fontFamily: fonts.mono }}>BLOCKED</span>
+                <span className="px-3 py-1.5 rounded-md text-xs font-bold" style={{ background: `${colors.danger}20`, color: colors.danger, fontFamily: fonts.mono }}>BLOCKED</span>
               </div>
 
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-5 mb-7">
                 <div className="text-center">
-                  <p style={{ fontFamily: fonts.headline, fontSize: 72, lineHeight: 1, color: colors.danger, textShadow: `0 0 30px ${colors.danger}60` }}>12</p>
-                  <p style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted, marginTop: 4 }}>/ 100</p>
+                  <p style={{ fontFamily: fonts.headline, fontSize: 84, lineHeight: 1, color: colors.danger, textShadow: `0 0 40px ${colors.danger}60` }}>12</p>
+                  <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted, marginTop: 4 }}>/ 100</p>
                 </div>
-                <div className="flex-1 pl-4" style={{ borderLeft: `1px solid ${colors.border}` }}>
+                <div className="flex-1 pl-5" style={{ borderLeft: `1px solid ${colors.border}` }}>
                   <AnimatedBar label="S1 Velocity" value={0.95} delay={0.8} />
                   <AnimatedBar label="S2 Refundable" value={0.92} delay={1.0} />
                   <AnimatedBar label="S5 Credit" value={0.88} delay={1.2} />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4" style={{ borderTop: `1px solid ${colors.border}` }}>
+              <div className="flex items-center justify-between pt-5" style={{ borderTop: `1px solid ${colors.border}` }}>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: colors.danger }} />
-                  <span style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted }}>Live Monitoring</span>
+                  <span style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted }}>Live Monitoring</span>
                 </div>
-                <span style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted }}>Updated 3s ago</span>
+                <span style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted }}>Updated 3s ago</span>
               </div>
             </div>
           </motion.div>

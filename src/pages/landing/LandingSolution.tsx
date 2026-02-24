@@ -18,7 +18,7 @@ const steps = [
 
 const bands = [
   { name: 'BLOCKED', range: '0–15', action: 'All credit revoked', color: '#991B1B', bg: '#991B1B20' },
-  { name: 'RESTRICTED', range: '16–35', action: 'Credit reduced 50%', color: '#E05C5C', bg: '#E05C5C20' },
+  { name: 'RESTRICTED', range: '16–35', action: 'Credit reduced 50%', color: '#E88A5C', bg: '#E88A5C20' },
   { name: 'WARNING', range: '36–55', action: 'Enhanced monitoring', color: '#E8A830', bg: '#E8A83020' },
   { name: 'CAUTION', range: '56–75', action: 'Standard terms', color: '#E8D44D', bg: '#E8D44D20' },
   { name: 'CLEAR', range: '76–100', action: 'Full credit access', color: '#4CAF82', bg: '#4CAF8220' },
@@ -34,7 +34,7 @@ const LandingSolution: React.FC = () => (
 
     <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
       <motion.div {...fadeUp(0)} className="text-center mb-16">
-        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.02em' }}>
+        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.04em' }}>
           Continuous. Behavioural. Predictive.
         </h2>
         <p className="mt-4 max-w-2xl mx-auto" style={{ fontFamily: fonts.body, fontSize: 18, color: colors.muted, lineHeight: 1.7 }}>
@@ -59,8 +59,8 @@ const LandingSolution: React.FC = () => (
               <p style={{ fontFamily: fonts.body, fontSize: 14, color: colors.mutedLight, lineHeight: 1.7 }}>{s.desc}</p>
             </div>
             {i < 2 && (
-              <div className="hidden md:flex absolute top-1/2 -right-3 z-10 w-6 h-6 rounded-full items-center justify-center" style={{ background: colors.bgCard, border: `1px solid ${colors.border}` }}>
-                <ArrowRight className="w-3 h-3" style={{ color: colors.amber }} />
+              <div className="hidden md:flex absolute top-1/2 -right-3 z-10 w-7 h-7 rounded-full items-center justify-center" style={{ background: colors.bgCard, border: `1px solid ${colors.amber}40` }}>
+                <ArrowRight className="w-3.5 h-3.5" style={{ color: colors.amber }} />
               </div>
             )}
           </motion.div>

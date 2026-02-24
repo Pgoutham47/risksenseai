@@ -23,7 +23,7 @@ const LandingComparison: React.FC = () => (
   <section className="relative py-24 md:py-32" style={{ background: colors.bg }}>
     <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
       <motion.div {...fadeUp(0)} className="text-center mb-16">
-        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.02em' }}>
+        <h2 style={{ fontFamily: fonts.headline, fontSize: 'clamp(32px, 5vw, 56px)', color: colors.white, letterSpacing: '0.04em' }}>
           What Most Teams Build vs. What We Built
         </h2>
       </motion.div>
@@ -32,13 +32,13 @@ const LandingComparison: React.FC = () => (
         {/* Header */}
         <div className="grid grid-cols-3 gap-0" style={{ background: colors.bgCard }}>
           <div className="p-4 border-r" style={{ borderColor: colors.border }}>
-            <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dimension</p>
+            <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Dimension</p>
           </div>
           <div className="p-4 border-r" style={{ borderColor: colors.border }}>
-            <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Most Fraud Systems</p>
+            <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Most Fraud Systems</p>
           </div>
-          <div className="p-4">
-            <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.amber, textTransform: 'uppercase', letterSpacing: '0.1em' }}>RiskSense AI</p>
+          <div className="p-4" style={{ background: `${colors.amber}10` }}>
+            <p style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.amber, textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700 }}>RiskSense AI</p>
           </div>
         </div>
 
@@ -50,8 +50,8 @@ const LandingComparison: React.FC = () => (
             <div className="p-4 border-r border-t" style={{ borderColor: colors.border }}>
               <p style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted }}>{r.them}</p>
             </div>
-            <div className="p-4 border-t" style={{ borderColor: colors.border, background: `${colors.amber}06` }}>
-              <p style={{ fontFamily: fonts.body, fontSize: 13, color: colors.amber, fontWeight: 500 }}>{r.us}</p>
+            <div className="p-4 border-t" style={{ borderColor: colors.border, background: `${colors.amber}08` }}>
+              <p style={{ fontFamily: fonts.body, fontSize: 13, color: colors.amber, fontWeight: 600 }}>{r.us}</p>
             </div>
           </div>
         ))}
