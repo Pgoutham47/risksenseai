@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip,
@@ -96,6 +96,75 @@ const ChartTooltipContent = ({ active, payload, label }: any) => {
 // ── Time range type ─────────────────────────────────────────────
 type TimeRange = '24h' | '7d' | '30d';
 const timeRangeDays: Record<TimeRange, number> = { '24h': 1, '7d': 7, '30d': 30 };
+
+// ── Live Event Feed with auto-cycle ─────────────────────────────
+const CYCLE_INTERVAL = 4000; // ms between new events
+const VISIBLE_EVENTS = 6;
+
+const generateFreshTimestamp = () => {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+};
+
+const LiveEventFeed: React.FC = () => {
+  const [visibleEvents, setVisibleEvents] = useState(liveEvents.slice(0, VISIBLE_EVENTS));
+  const [enteringId, setEnteringId] = useState<string | null>(null);
+  const poolIndexRef = useRef(VISIBLE_EVENTS);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nextIndex = poolIndexRef.current % liveEvents.length;
+      const nextEvent = {
+        ...liveEvents[nextIndex],
+        id: `${liveEvents[nextIndex].id}-${Date.now()}`,
+        timestamp: generateFreshTimestamp(),
+      };
+      poolIndexRef.current += 1;
+
+      setEnteringId(nextEvent.id);
+      setVisibleEvents(prev => [nextEvent, ...prev.slice(0, VISIBLE_EVENTS - 1)]);
+
+      // Clear entering state after animation completes
+      setTimeout(() => setEnteringId(null), 500);
+    }, CYCLE_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="lg:col-span-5 panel-glass p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Live Event Feed</h3>
+        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          <span className="w-1.5 h-1.5 rounded-full bg-band-clear pulse-live" />
+          LIVE
+        </span>
+      </div>
+      <div className="space-y-0 max-h-[260px] overflow-hidden pr-1">
+        {visibleEvents.map(ev => (
+          <div
+            key={ev.id}
+            className={`flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0 hover:bg-accent/[0.03] rounded-md px-1 transition-all duration-500 ${
+              enteringId === ev.id
+                ? 'animate-slide-in-event'
+                : ''
+            }`}
+          >
+            <span className={`severity-dot mt-1.5 ${ev.severity === 'critical' ? 'severity-critical' : ev.severity === 'warning' ? 'severity-warning' : 'severity-info'}`} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">{iconMap[ev.icon]}</span>
+                <span className="text-xs text-foreground font-medium truncate">{ev.agencyName}</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{ev.type}</p>
+            </div>
+            <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">{ev.timestamp}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // ── Dashboard ──────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
@@ -219,31 +288,8 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Live Event Feed */}
-          <div className="lg:col-span-5 panel-glass p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Live Event Feed</h3>
-              <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="w-1.5 h-1.5 rounded-full bg-band-clear pulse-live" />
-                LIVE
-              </span>
-            </div>
-            <div className="space-y-0 max-h-[260px] overflow-y-auto pr-1">
-              {liveEvents.map(ev => (
-                <div key={ev.id} className="flex items-start gap-3 py-2.5 border-b border-border/30 last:border-0 hover:bg-accent/[0.03] transition-colors rounded-md px-1">
-                  <span className={`severity-dot mt-1.5 ${ev.severity === 'critical' ? 'severity-critical' : ev.severity === 'warning' ? 'severity-warning' : 'severity-info'}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">{iconMap[ev.icon]}</span>
-                      <span className="text-xs text-foreground font-medium truncate">{ev.agencyName}</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{ev.type}</p>
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">{ev.timestamp}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Live Event Feed — auto-cycling */}
+          <LiveEventFeed />
 
           {/* Signal Activity Heatmap */}
           <div className="lg:col-span-7 panel-glass p-6">
