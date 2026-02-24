@@ -258,6 +258,27 @@
     box-shadow: 0 2px 8px -2px hsl(var(--warm-shadow) / 0.08), 0 4px 16px -4px hsl(var(--warm-shadow) / 0.04);
   }
 
+  /* Glassmorphic panel — premium frosted look */
+  .panel-glass {
+    @apply rounded-xl;
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.7);
+    box-shadow:
+      0 1px 2px 0 hsl(var(--warm-shadow) / 0.04),
+      0 4px 16px -4px hsl(var(--warm-shadow) / 0.06),
+      inset 0 1px 0 0 hsl(var(--gold) / 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .panel-glass:hover {
+    border-color: hsl(var(--gold) / 0.15);
+    box-shadow:
+      0 2px 8px -2px hsl(var(--warm-shadow) / 0.08),
+      0 8px 24px -8px hsl(var(--warm-shadow) / 0.06),
+      inset 0 1px 0 0 hsl(var(--gold) / 0.06);
+  }
+
   /* Severity dots */
   .severity-dot {
     @apply w-2 h-2 rounded-full inline-block;
