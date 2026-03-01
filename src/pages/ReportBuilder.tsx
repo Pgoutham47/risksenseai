@@ -5,30 +5,75 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { agencies, Agency, generateAgencyScoreHistory, decisionHistory, getBandColor, formatCurrency, alerts, Band } from '@/data/mockData';
+import { getBandColor, formatCurrency } from '@/lib/utils';
+import { type Band } from '@/lib/constants';
+import { useData } from '@/contexts/DataContext';
+import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const bandLabel: Record<Band, string> = { CLEAR: 'Clear', CAUTION: 'Caution', WARNING: 'Warning', RESTRICTED: 'Restricted', BLOCKED: 'Blocked' };
 
 const ReportBuilder: React.FC = () => {
-  const [selectedId, setSelectedId] = useState<string>(agencies[0].id);
+  const { agencies, alerts } = useData();
+  const [selectedId, setSelectedId] = useState<string>('');
   const reportRef = useRef<HTMLDivElement>(null);
 
-  const agency = agencies.find(a => a.id === selectedId) as Agency;
-  const scoreHistory = generateAgencyScoreHistory(agency.trustScore, 90);
-  const agencyAlerts = alerts.filter(a => a.agencyId === agency.id);
-  const decisions = decisionHistory[agency.id] ?? [
-    { timestamp: agency.lastUpdated, trustScore: agency.trustScore, band: agency.band, topSignals: agency.signals.filter(s => s.score >= 0.4).map(s => s.id), action: `Current band: ${agency.band}` },
-  ];
+  React.useEffect(() => {
+    if (agencies.length > 0 && !selectedId) {
+      setSelectedId(agencies[0].id);
+    }
+  }, [agencies, selectedId]);
 
-  const radarData = agency.signals.map(s => ({ signal: s.name.split(' ').slice(0, 2).join(' '), value: Math.round(s.score * 100) }));
+  const agency = agencies.find(a => a.id === selectedId) || agencies[0];
+
+  const { data: scoreHistory = [] } = useQuery({
+    queryKey: ['scoreHistory', selectedId],
+    queryFn: () => api.getAgencyScoreHistory(selectedId),
+    enabled: !!selectedId,
+  });
+  const { data: rawDecisions = [] } = useQuery({
+    queryKey: ['decisions', selectedId],
+    queryFn: () => api.getAgencyDecisions(selectedId),
+    enabled: !!selectedId,
+  });
+
+  const agencyAlerts = React.useMemo(() => agency ? alerts.filter(a => a.agencyId === agency.id) : [], [agency, alerts]);
+  const decisions = React.useMemo(() => {
+    if (!agency) return [];
+    if (rawDecisions.length === 0) {
+      return [{
+        timestamp: agency.lastUpdated || '',
+        trustScore: agency.trustScore,
+        band: agency.band,
+        topSignals: agency.signals ? agency.signals.filter((s: any) => s.score >= 0.4).map((s: any) => s.id) : [],
+        action: `Current band: ${agency.band}`
+      }];
+    }
+    return rawDecisions.map((d: any) => ({
+      timestamp: new Date(d.decided_at + 'Z').toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }),
+      trustScore: d.trust_score,
+      band: d.band,
+      topSignals: [d.top_signal_1, d.top_signal_2].filter(Boolean),
+      action: d.credit_action
+    }));
+  }, [agency, rawDecisions]);
+
+  const radarData = React.useMemo(() => {
+    if (!agency || !agency.signals) return [];
+    return agency.signals.map((s: any) => ({ signal: s.name.split(' ').slice(0, 2).join(' '), value: Math.round(s.score * 100) }));
+  }, [agency]);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const criticalSignals = agency.signals.filter(s => s.status === 'CRITICAL');
-  const elevatedSignals = agency.signals.filter(s => s.status === 'ELEVATED');
+  const criticalSignals = agency?.signals ? agency.signals.filter((s: any) => s.status === 'CRITICAL') : [];
+  const elevatedSignals = agency?.signals ? agency.signals.filter((s: any) => s.status === 'ELEVATED') : [];
+
+  if (!agencies || agencies.length === 0 || !agency) {
+    return null;
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-5xl mx-auto">
@@ -172,11 +217,10 @@ const ReportBuilder: React.FC = () => {
                     <TableCell className="text-xs font-medium">{s.id} — {s.name}</TableCell>
                     <TableCell className="text-xs font-mono">{(s.score * 100).toFixed(0)}%</TableCell>
                     <TableCell>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                        s.status === 'CRITICAL' ? 'bg-destructive/10 text-destructive' :
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${s.status === 'CRITICAL' ? 'bg-destructive/10 text-destructive' :
                         s.status === 'ELEVATED' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
-                        'bg-muted text-muted-foreground'
-                      }`}>{s.status}</span>
+                          'bg-muted text-muted-foreground'
+                        }`}>{s.status}</span>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{s.fraudType}</TableCell>
                     <TableCell className="text-xs text-muted-foreground hidden sm:table-cell print:table-cell max-w-[200px] truncate">{s.description}</TableCell>
@@ -241,11 +285,10 @@ const ReportBuilder: React.FC = () => {
                   {agencyAlerts.map(a => (
                     <TableRow key={a.id}>
                       <TableCell>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          a.severity === 'CRITICAL' ? 'bg-destructive/10 text-destructive' :
-                          a.severity === 'WARNING' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
-                          'bg-muted text-muted-foreground'
-                        }`}>{a.severity}</span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${a.severity === 'critical' ? 'bg-destructive/10 text-destructive' :
+                          a.severity === 'warning' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                            'bg-muted text-muted-foreground'
+                          }`}>{a.severity}</span>
                       </TableCell>
                       <TableCell className="text-xs font-medium">{a.type}</TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">{a.description}</TableCell>

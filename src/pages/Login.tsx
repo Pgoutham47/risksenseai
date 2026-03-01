@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,31 +16,29 @@ const Login: React.FC = () => {
 
   const validate = () => {
     const e: typeof errors = {};
-    if (!email.trim()) e.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Invalid email format';
+    if (!email.trim()) e.email = 'Username is required';
     if (!password.trim()) e.password = 'Password is required';
-    else if (password.length < 4) e.password = 'Password too short';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      toast({ title: 'Welcome back!', description: 'Logged in as Risk Officer' });
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({ title: 'Authentication failed', description: error.message, variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+      toast({ title: 'Welcome back!', description: 'Logged in successfully' });
       navigate('/dashboard');
-    }, 800);
-  };
-
-  const handleForgotPassword = () => {
-    if (!email.trim()) {
-      toast({ title: 'Enter your email', description: 'Please enter your email address first, then click Forgot Password.', variant: 'destructive' });
-      return;
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Something went wrong', variant: 'destructive' });
+      setLoading(false);
     }
-    toast({ title: 'Reset link sent', description: `A password reset link has been sent to ${email}` });
   };
 
   return (
@@ -86,16 +86,15 @@ const Login: React.FC = () => {
           </div>
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground tracking-wide uppercase">Email</label>
-              <input type="email" value={email} onChange={e => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: undefined })); }}
-                placeholder="admin@risksense.ai"
+              <label className="text-xs font-medium text-foreground tracking-wide uppercase">Username</label>
+              <input type="text" value={email} onChange={e => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: undefined })); }}
+                placeholder="Enter your username or email"
                 className={`w-full h-11 px-4 rounded-lg border ${errors.email ? 'border-destructive' : 'border-input'} bg-background text-foreground text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all`} />
               {errors.email && <p className="text-[11px] text-destructive">{errors.email}</p>}
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-foreground tracking-wide uppercase">Password</label>
-                <button type="button" onClick={handleForgotPassword} className="text-xs text-primary hover:text-primary/80 transition-colors">Forgot password?</button>
               </div>
               <div className="relative">
                 <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setErrors(prev => ({ ...prev, password: undefined })); }}
@@ -116,12 +115,9 @@ const Login: React.FC = () => {
               {loading ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
-          <div className="mt-6 text-center">
-            <p className="text-xs text-muted-foreground">Demo credentials: any email & password (4+ chars)</p>
-          </div>
           <div className="mt-6 pt-6 border-t border-border flex items-center gap-2 text-muted-foreground">
             <Lock className="w-3.5 h-3.5" />
-            <span className="text-xs">256-bit TLS encrypted · SOC 2 Compliant</span>
+            <span className="text-xs">Secured by Supabase Auth · 256-bit TLS</span>
           </div>
         </motion.div>
       </div>

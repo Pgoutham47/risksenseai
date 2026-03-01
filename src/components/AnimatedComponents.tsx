@@ -63,7 +63,7 @@ interface SignalGaugeProps {
   size?: number;
 }
 
-export const SignalGauge: React.FC<SignalGaugeProps> = ({ score, size = 56 }) => {
+export const SignalGauge: React.FC<SignalGaugeProps> = ({ score = 0, size = 56 }) => {
   const radius = (size - 8) / 2;
   const circumference = Math.PI * radius;
   const offset = circumference * (1 - score);
@@ -78,16 +78,15 @@ export const SignalGauge: React.FC<SignalGaugeProps> = ({ score, size = 56 }) =>
         strokeWidth="4"
         strokeLinecap="round"
       />
-      <motion.path
+      <path
         d={`M 4 ${size / 2 + 4} A ${radius} ${radius} 0 0 1 ${size - 4} ${size / 2 + 4}`}
         fill="none"
         stroke={color}
         strokeWidth="4"
         strokeLinecap="round"
         strokeDasharray={circumference}
-        initial={{ strokeDashoffset: circumference }}
-        animate={{ strokeDashoffset: offset }}
-        transition={{ duration: 1, ease: 'easeOut' }}
+        strokeDashoffset={offset}
+        style={{ transition: 'stroke-dashoffset 1s ease-out' }}
       />
       <text
         x={size / 2}

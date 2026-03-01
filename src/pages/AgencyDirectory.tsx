@@ -2,7 +2,9 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, ArrowUpDown, LayoutGrid, List, AlertTriangle, TrendingDown, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { agencies, getBandClass, getBorderBandClass, formatCurrency, generateAgencyScoreHistory, type Band, type Agency } from '@/data/mockData';
+import { getBandClass, getBorderBandClass, formatCurrency } from '@/lib/utils';
+import { type Band } from '@/lib/constants';
+import { useData, type UIAgency } from '@/contexts/DataContext';
 import { PageTransition } from '@/components/AnimatedComponents';
 import EmptyState from '@/components/EmptyState';
 
@@ -65,7 +67,7 @@ const ScoreRing: React.FC<{ score: number; band: Band; size?: number }> = ({ sco
 };
 
 // Flagged agency card
-const FlaggedCard: React.FC<{ agency: Agency; search: string; sparkData: number[]; onClick: () => void }> = ({ agency, search, sparkData, onClick }) => {
+const FlaggedCard: React.FC<{ agency: UIAgency; search: string; sparkData: number[]; onClick: () => void }> = ({ agency, search, sparkData, onClick }) => {
   const bandColorMap: Record<Band, string> = {
     CLEAR: 'hsl(var(--band-clear))',
     CAUTION: 'hsl(var(--band-caution))',
@@ -128,11 +130,10 @@ const FilterPill: React.FC<{ label: string; active: boolean; onClick: () => void
   <motion.button
     whileTap={{ scale: 0.95 }}
     onClick={onClick}
-    className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all ${
-      active
-        ? 'bg-primary text-primary-foreground border-primary'
-        : 'bg-card text-muted-foreground border-border hover:border-primary/30 hover:text-foreground'
-    }`}
+    className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all ${active
+      ? 'bg-primary text-primary-foreground border-primary'
+      : 'bg-card text-muted-foreground border-border hover:border-primary/30 hover:text-foreground'
+      }`}
     style={active && color ? { background: color, borderColor: color } : undefined}
   >
     {label}
@@ -140,6 +141,7 @@ const FilterPill: React.FC<{ label: string; active: boolean; onClick: () => void
 );
 
 const AgencyDirectory: React.FC = () => {
+  const { agencies, isLoading } = useData();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
@@ -153,29 +155,27 @@ const AgencyDirectory: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<ViewMode>('hybrid');
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const perPage = 20;
-
-  // Simulate loading
-  React.useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(t);
-  }, []);
 
   // Generate sparkline data per agency (memoized)
   const sparkDataMap = useMemo(() => {
     const map: Record<string, number[]> = {};
     agencies.forEach(a => {
-      const hist = generateAgencyScoreHistory(a.trustScore, 30);
-      map[a.id] = hist.map(h => h.score);
+      // TODO: Fetch score history from API
+      map[a.id] = [];
     });
     return map;
-  }, []);
+  }, [agencies]);
 
   const filtered = useMemo(() => {
     let list = [...agencies];
-    if (search) list = list.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || a.id.toLowerCase().includes(search.toLowerCase()));
-    if (bandFilter !== 'ALL') list = list.filter(a => a.band === bandFilter);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(a => a.name.toLowerCase().includes(q) || a.id.toLowerCase().includes(q) || a.cohort.toLowerCase().includes(q));
+    }
+    if (bandFilter !== 'ALL') {
+      list = list.filter(a => a.band === bandFilter);
+    }
     if (tenureFilter === 'NEW') list = list.filter(a => a.tenure < 90);
     if (tenureFilter === 'ESTABLISHED') list = list.filter(a => a.tenure >= 90);
     list.sort((a, b) => {
@@ -208,7 +208,7 @@ const AgencyDirectory: React.FC = () => {
     BLOCKED: 'hsl(var(--band-blocked))',
   };
 
-  if (isLoading) {
+  if (isLoading && agencies.length === 0) {
     return (
       <PageTransition>
         <div className="space-y-5">
@@ -252,9 +252,8 @@ const AgencyDirectory: React.FC = () => {
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-                    viewMode === mode ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all ${viewMode === mode ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
                 >
                   {mode === 'grid' ? <LayoutGrid className="w-3.5 h-3.5" /> : mode === 'table' ? <List className="w-3.5 h-3.5" /> : label}
                 </button>

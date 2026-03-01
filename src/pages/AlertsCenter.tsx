@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, AlertTriangle, Info, Eye, ArrowUpRight, CheckCircle, Download } from 'lucide-react';
-import { alerts, type AlertSeverity } from '@/data/mockData';
+import { type AlertSeverity } from '@/lib/constants';
+import { useData } from '@/contexts/DataContext';
+import { api } from '@/lib/api';
 import { PageTransition } from '@/components/AnimatedComponents';
 import { toast } from '@/hooks/use-toast';
 
@@ -13,7 +15,12 @@ const severityIcons: Record<AlertSeverity, React.ReactNode> = {
 
 const AlertsCenter: React.FC = () => {
   const navigate = useNavigate();
+  const { alerts } = useData();
   const [localAlerts, setLocalAlerts] = useState(alerts);
+
+  React.useEffect(() => {
+    setLocalAlerts(alerts);
+  }, [alerts]);
   const [sevFilter, setSevFilter] = useState<'ALL' | AlertSeverity>('ALL');
   const [ackFilter, setAckFilter] = useState<'ALL' | 'UNACK' | 'ACK'>('ALL');
 

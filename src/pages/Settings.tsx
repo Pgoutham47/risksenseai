@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { CheckCircle, Wifi, RotateCcw, Sun, Moon, Monitor } from 'lucide-react';
-import { SIGNAL_DEFINITIONS } from '@/data/mockData';
+import { CheckCircle, Wifi, RotateCcw, Sun, Moon, Monitor, AlertTriangle } from 'lucide-react';
+import { SIGNAL_DEFINITIONS } from '@/lib/constants';
 import { PageTransition } from '@/components/AnimatedComponents';
 import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
+import { api } from '@/lib/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const defaultWeights = [18, 15, 12, 13, 14, 8, 10, 10];
 const defaultThresholds = { BLOCKED: 15, RESTRICTED: 35, WARNING: 55, CAUTION: 75 };
@@ -11,14 +13,20 @@ const defaultThresholds = { BLOCKED: 15, RESTRICTED: 35, WARNING: 55, CAUTION: 7
 const Settings: React.FC = () => {
   const [weights, setWeights] = useState(defaultWeights);
   const [thresholds, setThresholds] = useState(defaultThresholds);
+  const [isResetting, setIsResetting] = useState(false);
   const [alertToggles, setAlertToggles] = useState<Record<string, boolean>>({
     'Score Drop': true, 'Credit Frozen': true, 'Velocity Spike': true, 'Chargeback Phase': true, 'Legal Hold': true,
   });
   const [escalationEmail, setEscalationEmail] = useState('risk-team@tbo.com');
-  const [tenurePeriod, setTenurePeriod] = useState(90);
   const [saved, setSaved] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const { mode: themeMode, setMode: setThemeMode, isDark } = useTheme();
+  const queryClient = useQueryClient();
+  const { data: health } = useQuery({
+    queryKey: ['systemHealth'],
+    queryFn: api.getSystemHealth,
+    refetchInterval: isResetting ? false : 10000,
+  });
 
   const totalWeight = weights.reduce((s, w) => s + w, 0);
 
@@ -48,11 +56,32 @@ const Settings: React.FC = () => {
   const handleReset = () => {
     setWeights(defaultWeights);
     setThresholds(defaultThresholds);
-    setTenurePeriod(90);
     setEscalationEmail('risk-team@tbo.com');
     setAlertToggles({ 'Score Drop': true, 'Credit Frozen': true, 'Velocity Spike': true, 'Chargeback Phase': true, 'Legal Hold': true });
     setHasChanges(false);
     toast({ title: 'Reset to Defaults', description: 'All settings have been restored to their default values.' });
+  };
+
+  const handleFactoryReset = async () => {
+    if (!window.confirm("Are you SURE you want to Factory Reset the system? All history, alerts, and decisions will be permanently deleted and agencies will be reset to a clean state.")) return;
+
+    setIsResetting(true);
+
+    // Stop ALL background refetches so they don't hit the resetting database
+    await queryClient.cancelQueries();
+    queryClient.clear();
+
+    try {
+      await api.resetDatabase();
+      toast({ title: "System Reset", description: "Database wiped & re-seeded. Redirecting..." });
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1500);
+    } catch (e: any) {
+      console.error('Reset failed:', e);
+      toast({ title: "Reset Failed", description: e?.message || "Could not reset the database.", variant: "destructive" });
+      setIsResetting(false);
+    }
   };
 
   return (
@@ -109,15 +138,6 @@ const Settings: React.FC = () => {
           </div>
         </div>
 
-        {/* Tenure Period */}
-        <div className="panel p-6">
-          <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">New Agency Tenure Period</h3>
-          <div className="flex items-center gap-3">
-            <input type="number" value={tenurePeriod} onChange={e => { setTenurePeriod(Number(e.target.value)); setHasChanges(true); }} className="w-24 bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40" />
-            <span className="text-sm text-muted-foreground">days</span>
-          </div>
-        </div>
-
         {/* Appearance */}
         <div className="panel p-6">
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Appearance</h3>
@@ -131,11 +151,10 @@ const Settings: React.FC = () => {
               <button
                 key={opt.value}
                 onClick={() => setThemeMode(opt.value)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border ${
-                  themeMode === opt.value
-                    ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                    : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all border ${themeMode === opt.value
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
+                  }`}
               >
                 <opt.icon className="w-4 h-4" />
                 {opt.label}
@@ -149,19 +168,42 @@ const Settings: React.FC = () => {
           <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">API Connection Status</h3>
           <div className="flex items-center gap-6 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-band-clear pulse-live" />
+              <span className={`w-2.5 h-2.5 rounded-full ${health?.api_status === 'connected' ? 'bg-band-clear pulse-live' : 'bg-destructive'}`} />
               <span className="text-sm text-foreground font-medium">TBO Staging API</span>
-              <Wifi className="w-3.5 h-3.5 text-band-clear" />
+              <Wifi className={`w-3.5 h-3.5 ${health?.api_status === 'connected' ? 'text-band-clear' : 'text-destructive'}`} />
             </div>
             <div className="text-xs text-muted-foreground">
               <span>Last successful poll: </span>
-              <span className="font-mono text-foreground font-semibold">2 min ago</span>
+              <span className="font-mono text-foreground font-semibold">{health?.last_sync_label || '—'}</span>
             </div>
             <div className="text-xs text-muted-foreground">
-              <span>Events pulled (last cycle): </span>
-              <span className="font-mono text-foreground font-semibold">142</span>
+              <span>DB Latency: </span>
+              <span className="font-mono text-foreground font-semibold">{health?.latency_ms ?? '—'}ms</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <span>Events (last 24h): </span>
+              <span className="font-mono text-foreground font-semibold">{health?.events_24h ?? '—'}</span>
             </div>
           </div>
+        </div>
+
+        {/* Danger Zone */}
+        <div className="panel p-6 border-destructive/20 bg-destructive/5">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-5 h-5 text-destructive" />
+            <h3 className="font-heading text-sm tracking-wider text-destructive">Danger Zone: Factory Reset</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            This will permanently erase all agency history, transaction logs, live alerts, and risk decisions.
+            The dashboard will be restored to a true clean slate with 0 data and all agencies back at 100 Trust Score.
+          </p>
+          <button
+            onClick={handleFactoryReset}
+            disabled={isResetting}
+            className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:bg-destructive/90 transition-colors disabled:opacity-50"
+          >
+            {isResetting ? "Resetting System..." : "Wipe Database & Reset System"}
+          </button>
         </div>
 
         {/* Save / Reset */}

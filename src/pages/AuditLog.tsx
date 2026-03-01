@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { ClipboardList, Filter, Search, ChevronDown } from 'lucide-react';
 import { PageTransition } from '@/components/AnimatedComponents';
-import { agencies } from '@/data/mockData';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 
 type ActionType = 'Override' | 'Acknowledge' | 'Escalation' | 'Band Change' | 'Credit Adjust' | 'Setting Change';
 type AuditSeverity = 'high' | 'medium' | 'low';
 
 interface AuditEntry {
   id: string;
-  timestamp: Date;
+  timestamp: string;
   user: string;
   action: ActionType;
   agencyId: string;
@@ -18,70 +19,6 @@ interface AuditEntry {
 }
 
 const ACTION_TYPES: ActionType[] = ['Override', 'Acknowledge', 'Escalation', 'Band Change', 'Credit Adjust', 'Setting Change'];
-
-const USERS = ['Admin (Risk Officer)', 'Priya Sharma', 'Rajesh Gupta', 'Neha Verma'];
-
-function generateAuditLog(): AuditEntry[] {
-  const entries: AuditEntry[] = [];
-  const templates: { action: ActionType; details: string[]; severity: AuditSeverity }[] = [
-    { action: 'Override', details: [
-      'Overrode band from RESTRICTED to CAUTION — "Agency provided documentation for spike"',
-      'Overrode band from WARNING to CLEAR — "Seasonal pattern confirmed by ops team"',
-      'Overrode band from BLOCKED to RESTRICTED — "Legal hold lifted, partial credit restored"',
-    ], severity: 'high' },
-    { action: 'Acknowledge', details: [
-      'Acknowledged CRITICAL alert — Score Drop >20pts',
-      'Acknowledged WARNING alert — Invoice Late >72h',
-      'Acknowledged CRITICAL alert — Credit Frozen',
-      'Acknowledged WARNING alert — Velocity Spike',
-      'Acknowledged INFO alert — Score Recovery',
-    ], severity: 'low' },
-    { action: 'Escalation', details: [
-      'Escalated alert to senior risk team — Chargeback Phase 2 entered',
-      'Escalated alert to legal — Legal Hold Initiated',
-      'Escalated to compliance — Repeated override pattern detected',
-    ], severity: 'high' },
-    { action: 'Band Change', details: [
-      'Auto band change: CAUTION → WARNING (score dropped below 56)',
-      'Auto band change: WARNING → RESTRICTED (score dropped below 36)',
-      'Auto band change: RESTRICTED → BLOCKED (score dropped below 16)',
-      'Auto band change: RESTRICTED → WARNING (score recovered above 36)',
-    ], severity: 'medium' },
-    { action: 'Credit Adjust', details: [
-      'Credit limit reduced to 75% — WARNING band policy applied',
-      'Credit limit reduced to 40% — RESTRICTED band policy applied',
-      'Credit frozen — BLOCKED band policy applied',
-      'Credit restored to 100% — moved to CLEAR band',
-    ], severity: 'medium' },
-    { action: 'Setting Change', details: [
-      'Updated Signal S1 weight from 18% to 22%',
-      'Updated BLOCKED threshold from 15 to 12',
-      'Changed escalation email to risk-escalation@tbo.com',
-      'Disabled alert type: Score Recovery',
-    ], severity: 'low' },
-  ];
-
-  for (let i = 0; i < 40; i++) {
-    const template = templates[Math.floor(Math.random() * templates.length)];
-    const agency = agencies[Math.floor(Math.random() * agencies.length)];
-    const detail = template.details[Math.floor(Math.random() * template.details.length)];
-    const hoursAgo = Math.floor(Math.random() * 720); // up to 30 days
-    entries.push({
-      id: `audit-${i}`,
-      timestamp: new Date(Date.now() - hoursAgo * 3600000),
-      user: USERS[Math.floor(Math.random() * USERS.length)],
-      action: template.action,
-      agencyId: template.action === 'Setting Change' ? '—' : agency.id,
-      agencyName: template.action === 'Setting Change' ? 'System' : agency.name,
-      detail,
-      severity: template.severity,
-    });
-  }
-
-  return entries.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-}
-
-const auditLog = generateAuditLog();
 
 const severityStyles: Record<AuditSeverity, string> = {
   high: 'bg-destructive/10 text-destructive',
@@ -98,7 +35,9 @@ const actionStyles: Record<ActionType, string> = {
   'Setting Change': 'bg-muted text-muted-foreground border-border',
 };
 
-function formatTimestamp(d: Date): string {
+function formatTimestamp(ts: string): string {
+  if (!ts) return '—';
+  const d = new Date(ts + 'Z');
   const now = Date.now();
   const diff = now - d.getTime();
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
@@ -112,6 +51,12 @@ const AuditLog: React.FC = () => {
   const [severityFilter, setSeverityFilter] = useState<AuditSeverity | 'All'>('All');
   const [showFilters, setShowFilters] = useState(false);
 
+  const { data: auditLog = [], isLoading } = useQuery<AuditEntry[]>({
+    queryKey: ['auditLog'],
+    queryFn: () => api.getAuditLog(),
+    refetchInterval: 10000,
+  });
+
   const filtered = useMemo(() => {
     return auditLog.filter(e => {
       if (actionFilter !== 'All' && e.action !== actionFilter) return false;
@@ -122,14 +67,14 @@ const AuditLog: React.FC = () => {
       }
       return true;
     });
-  }, [search, actionFilter, severityFilter]);
+  }, [auditLog, search, actionFilter, severityFilter]);
 
   const counts = useMemo(() => ({
     total: auditLog.length,
     overrides: auditLog.filter(e => e.action === 'Override').length,
     escalations: auditLog.filter(e => e.action === 'Escalation').length,
     high: auditLog.filter(e => e.severity === 'high').length,
-  }), []);
+  }), [auditLog]);
 
   return (
     <PageTransition>
@@ -193,9 +138,8 @@ const AuditLog: React.FC = () => {
                     <button
                       key={type}
                       onClick={() => setActionFilter(type)}
-                      className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
-                        actionFilter === type ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary'
-                      }`}
+                      className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${actionFilter === type ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary'
+                        }`}
                     >
                       {type}
                     </button>
@@ -209,9 +153,8 @@ const AuditLog: React.FC = () => {
                     <button
                       key={sev}
                       onClick={() => setSeverityFilter(sev)}
-                      className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors capitalize ${
-                        severityFilter === sev ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary'
-                      }`}
+                      className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors capitalize ${severityFilter === sev ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary'
+                        }`}
                     >
                       {sev}
                     </button>
@@ -237,7 +180,16 @@ const AuditLog: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 rounded-full border-2 border-accent/20 border-t-accent animate-spin" />
+                        Loading audit log...
+                      </div>
+                    </td>
+                  </tr>
+                ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-12 text-muted-foreground">No matching audit entries found.</td>
                   </tr>
@@ -247,7 +199,7 @@ const AuditLog: React.FC = () => {
                       <td className="py-2.5 px-4 font-mono text-muted-foreground whitespace-nowrap">{formatTimestamp(entry.timestamp)}</td>
                       <td className="py-2.5 px-4 text-foreground font-medium whitespace-nowrap">{entry.user}</td>
                       <td className="py-2.5 px-4">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${actionStyles[entry.action]}`}>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${actionStyles[entry.action] || 'bg-muted text-muted-foreground border-border'}`}>
                           {entry.action}
                         </span>
                       </td>

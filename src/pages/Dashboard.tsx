@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import {
   PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine
@@ -11,23 +13,13 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  agencies, liveEvents, generateScoreHistory, generateHeatmapData,
-  getBandClass, getBandColor, formatCurrency, alerts, type Band
-} from '@/data/mockData';
+  getBandClass, getBandColor, formatCurrency
+} from '@/lib/utils';
+import { type Band } from '@/lib/constants';
 import { AnimatedScore, AnimatedCurrency, PageTransition, DashboardSkeleton } from '@/components/AnimatedComponents';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useData } from '@/contexts/DataContext';
 
-// ── Data ───────────────────────────────────────────────────────────
-const bandDistribution: { name: Band; value: number; color: string }[] = [
-  { name: 'CLEAR', value: agencies.filter(a => a.band === 'CLEAR').length, color: getBandColor('CLEAR') },
-  { name: 'CAUTION', value: agencies.filter(a => a.band === 'CAUTION').length, color: getBandColor('CAUTION') },
-  { name: 'WARNING', value: agencies.filter(a => a.band === 'WARNING').length, color: getBandColor('WARNING') },
-  { name: 'RESTRICTED', value: agencies.filter(a => a.band === 'RESTRICTED').length, color: getBandColor('RESTRICTED') },
-  { name: 'BLOCKED', value: agencies.filter(a => a.band === 'BLOCKED').length, color: getBandColor('BLOCKED') },
-];
-
-const topAtRisk = [...agencies].sort((a, b) => a.trustScore - b.trustScore).slice(0, 5);
-const heatmapData = generateHeatmapData();
 const signals = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8'];
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -44,28 +36,7 @@ const iconMap: Record<string, React.ReactNode> = {
   'check-circle': <CheckCircle className="w-3.5 h-3.5" />,
 };
 
-const totalExposure = agencies.reduce((s, a) => s + a.outstandingBalance, 0);
-const warningOrWorse = agencies.filter(a => ['WARNING', 'RESTRICTED', 'BLOCKED'].includes(a.band)).length;
-const totalAgencies = agencies.length;
-
-// ── Mini sparkline data generators ──────────────────────────────
-function generateSparkline(base: number, len = 7, volatility = 0.15): number[] {
-  const data: number[] = [];
-  let v = base;
-  for (let i = 0; i < len; i++) {
-    v += (Math.random() - 0.5) * base * volatility;
-    v = Math.max(0, v);
-    data.push(Math.round(v));
-  }
-  return data;
-}
-
-const kpiSparklines = {
-  agencies: generateSparkline(totalAgencies, 7, 0.05),
-  warnings: generateSparkline(warningOrWorse, 7, 0.2),
-  alerts: generateSparkline(8, 7, 0.4),
-  exposure: generateSparkline(totalExposure / 100000, 7, 0.12),
-};
+// Sparklines will be fed by API arrays in the future.
 
 // ── Sparkline component ────────────────────────────────────────
 const MiniSparkline: React.FC<{ data: number[]; color: string; className?: string }> = ({ data, color, className = '' }) => {
@@ -103,36 +74,13 @@ const ChartTooltipContent = ({ active, payload, label }: any) => {
 type TimeRange = '24h' | '7d' | '30d';
 const timeRangeDays: Record<TimeRange, number> = { '24h': 1, '7d': 7, '30d': 30 };
 
-// ── Live Event Feed with auto-cycle ─────────────────────────────
-const CYCLE_INTERVAL = 4000;
 const VISIBLE_EVENTS = 6;
-
-const generateFreshTimestamp = () => {
-  const now = new Date();
-  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-};
 
 const LiveEventFeed: React.FC = () => {
   const navigate = useNavigate();
-  const [visibleEvents, setVisibleEvents] = useState(liveEvents.slice(0, VISIBLE_EVENTS));
-  const [enteringId, setEnteringId] = useState<string | null>(null);
-  const poolIndexRef = useRef(VISIBLE_EVENTS);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const nextIndex = poolIndexRef.current % liveEvents.length;
-      const nextEvent = {
-        ...liveEvents[nextIndex],
-        id: `${liveEvents[nextIndex].id}-${Date.now()}`,
-        timestamp: generateFreshTimestamp(),
-      };
-      poolIndexRef.current += 1;
-      setEnteringId(nextEvent.id);
-      setVisibleEvents(prev => [nextEvent, ...prev.slice(0, VISIBLE_EVENTS - 1)]);
-      setTimeout(() => setEnteringId(null), 500);
-    }, CYCLE_INTERVAL);
-    return () => clearInterval(interval);
-  }, []);
+  const { liveEvents, agencies } = useData();
+  const visibleEvents = liveEvents.slice(0, VISIBLE_EVENTS);
+  const enteringId = null;
 
   return (
     <div className="panel-glass p-6">
@@ -170,16 +118,17 @@ const LiveEventFeed: React.FC = () => {
 };
 
 // ── Interactive Risk Map (grid-based) ───────────────────────────
-const regions = [
-  { name: 'North', agencies: agencies.filter((_, i) => i % 4 === 0) },
-  { name: 'South', agencies: agencies.filter((_, i) => i % 4 === 1) },
-  { name: 'East', agencies: agencies.filter((_, i) => i % 4 === 2) },
-  { name: 'West', agencies: agencies.filter((_, i) => i % 4 === 3) },
-];
-
 const RiskMap: React.FC = () => {
   const navigate = useNavigate();
+  const { agencies } = useData();
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
+
+  const regions = useMemo(() => [
+    { name: 'North', agencies: agencies.filter((_, i) => i % 4 === 0) },
+    { name: 'South', agencies: agencies.filter((_, i) => i % 4 === 1) },
+    { name: 'East', agencies: agencies.filter((_, i) => i % 4 === 2) },
+    { name: 'West', agencies: agencies.filter((_, i) => i % 4 === 3) },
+  ], [agencies]);
 
   const getRegionRisk = (regionAgencies: typeof agencies) => {
     if (regionAgencies.length === 0) return 'CLEAR' as Band;
@@ -528,27 +477,46 @@ const WelcomeModal: React.FC<{ onClose: () => void; onStartTour: () => void }> =
 // ── Dashboard ──────────────────────────────────────────────────
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { agencies, alerts, isLoading, heatmapData, timelineData, dashboardStats, refetch } = useData();
+  const [activeTab, setActiveTab] = useState('overview');
+  const totalAgencies = agencies.length;
+  const warningOrWorse = agencies.filter(a => ['WARNING', 'RESTRICTED', 'BLOCKED'].includes(a.band)).length;
+  const totalExposure = agencies.reduce((s, a) => s + a.outstandingBalance, 0);
+
+  const bandDistribution: { name: Band; value: number; color: string }[] = useMemo(() => [
+    { name: 'CLEAR', value: agencies.filter(a => a.band === 'CLEAR').length, color: getBandColor('CLEAR') },
+    { name: 'CAUTION', value: agencies.filter(a => a.band === 'CAUTION').length, color: getBandColor('CAUTION') },
+    { name: 'WARNING', value: agencies.filter(a => a.band === 'WARNING').length, color: getBandColor('WARNING') },
+    { name: 'RESTRICTED', value: agencies.filter(a => a.band === 'RESTRICTED').length, color: getBandColor('RESTRICTED') },
+    { name: 'BLOCKED', value: agencies.filter(a => a.band === 'BLOCKED').length, color: getBandColor('BLOCKED') },
+  ], [agencies]);
+
+  const topAtRisk = useMemo(() => [...agencies].sort((a, b) => a.trustScore - b.trustScore).slice(0, 5), [agencies]);
+
+  const { data: kpiSparklines = { agencies: [0, 0, 0, 0, 0, 0, 0], warnings: [0, 0, 0, 0, 0, 0, 0], alerts: [0, 0, 0, 0, 0, 0, 0], exposure: [0, 0, 0, 0, 0, 0, 0] } } = useQuery({
+    queryKey: ['kpiSparklines'],
+    queryFn: api.getKpiSparklines,
+    refetchInterval: 15000,
+  });
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [loading, setLoading] = useState(true);
+
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('dashboard-welcome-done'));
   const [showWalkthrough, setShowWalkthrough] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1200);
-    return () => clearTimeout(t);
-  }, []);
-
   const handleRefresh = useCallback(async () => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
+    refetch();
     setRefreshKey(k => k + 1);
-    setLoading(false);
-  }, []);
+  }, [refetch]);
 
   const { containerRef, indicator } = usePullToRefresh(handleRefresh);
 
-  const scoreHistory = useMemo(() => generateScoreHistory(timeRangeDays[timeRange]), [timeRange, refreshKey]);
+  // Timeline with real time-range filtering
+  const { data: scoreHistory = [] } = useQuery({
+    queryKey: ['timeline', timeRange, refreshKey],
+    queryFn: () => api.getDashboardTimeline(timeRangeDays[timeRange]),
+    refetchInterval: 15000,
+  });
 
   const closeWelcome = useCallback(() => {
     setShowWelcome(false);
@@ -565,19 +533,11 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const kpis = [
-    { label: 'Agencies Monitored', value: totalAgencies, icon: <Activity className="w-5 h-5" />, sparkData: kpiSparklines.agencies, sparkColor: 'hsl(var(--accent))', link: '/agencies', trend: '+2', trendUp: true },
-    { label: 'Warning or Worse', value: warningOrWorse, icon: <AlertTriangle className="w-5 h-5" />, danger: true, sparkData: kpiSparklines.warnings, sparkColor: 'hsl(var(--destructive))', link: '/agencies?band=WARNING', trend: '+1', trendUp: false },
-    { label: 'Alerts (24h)', value: 8, icon: <Zap className="w-5 h-5" />, sparkData: kpiSparklines.alerts, sparkColor: 'hsl(var(--accent))', link: '/alerts', trend: '-3', trendUp: true },
-    { label: 'Credit Exposure', value: totalExposure, rawCurrency: true, icon: <CreditCard className="w-5 h-5" />, sparkData: kpiSparklines.exposure, sparkColor: 'hsl(var(--accent))', link: '/analytics', trend: '+₹2.1L', trendUp: false },
+    { label: 'Agencies Monitored', value: dashboardStats?.total_agencies ?? totalAgencies, icon: <Activity className="w-5 h-5" />, sparkData: kpiSparklines.agencies, sparkColor: 'hsl(var(--accent))', link: '/agencies' },
+    { label: 'Warning or Worse', value: dashboardStats?.at_risk_count ?? warningOrWorse, icon: <AlertTriangle className="w-5 h-5" />, danger: true, sparkData: kpiSparklines.warnings, sparkColor: 'hsl(var(--destructive))', link: '/agencies?band=WARNING' },
+    { label: 'Alerts (24h)', value: dashboardStats?.alerts_today ?? 0, icon: <Zap className="w-5 h-5" />, sparkData: kpiSparklines.alerts, sparkColor: 'hsl(var(--accent))', link: '/alerts' },
+    { label: 'Credit Exposure', value: dashboardStats?.total_credit_exposure ?? totalExposure, rawCurrency: true, icon: <CreditCard className="w-5 h-5" />, sparkData: kpiSparklines.exposure, sparkColor: 'hsl(var(--accent))', link: '/analytics' },
   ];
-
-  if (loading) {
-    return (
-      <PageTransition>
-        <DashboardSkeleton />
-      </PageTransition>
-    );
-  }
 
   // Greeting
   const hour = new Date().getHours();
@@ -586,94 +546,347 @@ const Dashboard: React.FC = () => {
 
   return (
     <PageTransition>
-      <div ref={containerRef} className="space-y-5 -m-4 md:-m-6 p-4 md:p-6 overflow-auto h-[calc(100vh-5rem)]">
-        {indicator}
+      {isLoading && agencies.length === 0 ? (
+        <DashboardSkeleton />
+      ) : (
+        <div ref={containerRef} className={`space-y-5 -m-4 md:-m-6 p-4 md:p-6 overflow-auto h-[calc(100vh-5rem)] relative`}>
+          {isLoading && agencies.length > 0 && (
+            <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-card/90 border border-border shadow-lg backdrop-blur-sm">
+              <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="text-[10px] font-mono text-muted-foreground tracking-widest">SYNCING</span>
+            </div>
+          )}
+          {indicator}
 
-        {/* ── Greeting Header ─────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-2"
-        >
-          <div>
-            <h2 className="text-lg md:text-xl font-heading tracking-wider text-foreground">{greeting}, Admin</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{today} · {warningOrWorse} agencies need attention · {alerts.filter(a => !a.acknowledged).length} unresolved alerts</p>
-          </div>
-          <button
-            onClick={() => setShowWalkthrough(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors press-scale self-start sm:self-auto"
+          {/* ── Greeting Header ─────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col sm:flex-row sm:items-end justify-between gap-2"
           >
-            <HelpCircle className="w-3.5 h-3.5" />
-            Tour
-          </button>
-        </motion.div>
+            <div>
+              <h2 className="text-lg md:text-xl font-heading tracking-wider text-foreground">{greeting}, Admin</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{today} · {warningOrWorse} agencies need attention · {alerts.filter(a => !a.acknowledged).length} unresolved alerts</p>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                onClick={() => navigate('/reasoning-demo')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-primary-foreground bg-accent hover:bg-accent/90 transition-colors press-scale"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Reasoning Demo
+              </button>
+              <button
+                onClick={() => setShowWalkthrough(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary transition-colors press-scale"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                Tour
+              </button>
+            </div>
+          </motion.div>
 
-        {/* ── Full-width KPI Hero Strip ─────────────────────────── */}
-        <div id="kpi-strip" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {kpis.map((kpi, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.4, ease: 'easeOut' }}
-              className="kpi-card cursor-pointer"
-              onClick={() => navigate(kpi.link)}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{kpi.label}</p>
-                <div className="p-2 rounded-lg" style={{ background: 'hsl(var(--accent) / 0.08)' }}>
-                  <span className={kpi.danger ? 'text-destructive' : 'text-accent'}>{kpi.icon}</span>
-                </div>
-              </div>
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  {kpi.rawCurrency ? (
-                    <p className="text-2xl font-bold text-foreground">
-                      <AnimatedCurrency value={kpi.value} />
-                    </p>
-                  ) : (
-                    <p className={`text-2xl font-bold ${kpi.danger ? 'text-destructive' : 'text-foreground'}`}>
-                      <AnimatedScore value={kpi.value as number} />
-                    </p>
-                  )}
-                  {/* Trend arrow */}
-                  <div className={`flex items-center gap-1 mt-1 text-[10px] font-medium ${kpi.trendUp ? 'text-band-clear' : 'text-destructive'}`}>
-                    {kpi.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    <span>{kpi.trend}</span>
-                    <span className="text-muted-foreground ml-0.5">vs 7d</span>
+          {/* ── Full-width KPI Hero Strip ─────────────────────────── */}
+          <div id="kpi-strip" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {kpis.map((kpi, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.4, ease: 'easeOut' }}
+                className="kpi-card cursor-pointer"
+                onClick={() => navigate(kpi.link)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{kpi.label}</p>
+                  <div className="p-2 rounded-lg" style={{ background: 'hsl(var(--accent) / 0.08)' }}>
+                    <span className={kpi.danger ? 'text-destructive' : 'text-accent'}>{kpi.icon}</span>
                   </div>
                 </div>
-                <MiniSparkline data={kpi.sparkData} color={kpi.sparkColor} />
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    {kpi.rawCurrency ? (
+                      <p className="text-2xl font-bold text-foreground">
+                        <AnimatedCurrency value={kpi.value} />
+                      </p>
+                    ) : (
+                      <p className={`text-2xl font-bold ${kpi.danger ? 'text-destructive' : 'text-foreground'}`}>
+                        <AnimatedScore value={kpi.value as number} />
+                      </p>
+                    )}
+                  </div>
+                  <MiniSparkline data={kpi.sparkData} color={kpi.sparkColor} />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* ── Tabbed Dashboard Sections ─────────────────────────── */}
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList id="tab-bar" className="w-full justify-start bg-muted/50 p-1 rounded-xl mb-5 overflow-x-auto">
+              <TabsTrigger value="overview" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="signals" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                Signals
+              </TabsTrigger>
+              <TabsTrigger value="trends" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                Trends
+              </TabsTrigger>
+              <TabsTrigger value="map" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                Risk Map
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ── Overview Tab ──────────────────────────────────── */}
+            <TabsContent value="overview" className="space-y-5 mt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Risk Distribution — Donut */}
+                <div id="risk-donut" className="lg:col-span-4 panel-glass p-6">
+                  <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Risk Distribution</h3>
+                  <div className="flex flex-col items-center">
+                    <div className="relative">
+                      <ResponsiveContainer width={200} height={200}>
+                        <PieChart>
+                          <Pie data={bandDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value" stroke="none">
+                            {bandDistribution.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="font-mono text-3xl font-bold text-foreground"><AnimatedScore value={totalAgencies} /></span>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Total</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-5 gap-y-2 mt-4 w-full">
+                      {bandDistribution.map(b => (
+                        <div key={b.name} className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: b.color }} />
+                          <span className="text-xs text-muted-foreground">{b.name}</span>
+                          <span className="font-mono text-xs text-foreground font-semibold ml-auto">{b.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top 5 At-Risk */}
+                <div id="at-risk-table" className="lg:col-span-8 panel-glass p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Top 5 At-Risk Agencies</h3>
+                    <button onClick={() => navigate('/agencies')} className="flex items-center gap-1 text-[11px] text-accent hover:text-accent/80 transition-colors font-medium uppercase tracking-wider">
+                      View All <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto rounded-lg border border-border/50">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-muted-foreground bg-secondary/60 sticky top-0 z-10">
+                          <th className="text-left py-3 px-4 font-medium">Agency</th>
+                          <th className="text-center py-3 px-4 font-medium">Score</th>
+                          <th className="text-center py-3 px-4 font-medium">Band</th>
+                          <th className="text-right py-3 px-4 font-medium">Exposure</th>
+                          <th className="text-right py-3 px-4 font-medium">Utilization</th>
+                          <th className="text-center py-3 px-4 font-medium">Trend</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topAtRisk.map((a, idx) => (
+                          <tr key={a.id} className={`border-b border-border/30 cursor-pointer transition-colors hover:bg-accent/[0.04] ${idx % 2 === 1 ? 'bg-secondary/20' : ''}`} onClick={() => navigate(`/agency/${a.id}`)}>
+                            <td className="py-3 px-4">
+                              <div className="flex flex-col">
+                                <span className="text-foreground font-medium">{a.name}</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">{a.id}</span>
+                              </div>
+                            </td>
+                            <td className="text-center px-4 font-mono text-foreground font-semibold">{a.trustScore}</td>
+                            <td className="text-center px-4"><span className={getBandClass(a.band)}>{a.band}</span></td>
+                            <td className="text-right px-4 font-mono text-foreground">{formatCurrency(a.outstandingBalance)}</td>
+                            <td className="text-right px-4">
+                              <div className="inline-flex items-center gap-2">
+                                <div className="w-14 h-1.5 rounded-full overflow-hidden bg-muted">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${a.utilization}%` }}
+                                    transition={{ duration: 0.8, delay: idx * 0.1 }}
+                                    className="h-full rounded-full"
+                                    style={{
+                                      background: a.utilization > 70 ? 'hsl(var(--destructive))' : a.utilization > 50 ? 'hsl(var(--band-warning))' : 'hsl(var(--band-clear))'
+                                    }}
+                                  />
+                                </div>
+                                <span className="font-mono text-muted-foreground text-[10px] w-8 text-right">{a.utilization}%</span>
+                              </div>
+                            </td>
+                            <td className="text-center px-4">{a.trustScore < 40 ? <TrendingDown className="w-3.5 h-3.5 text-destructive inline" /> : <TrendingUp className="w-3.5 h-3.5 text-[hsl(var(--band-clear))] inline" />}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Live Event Feed */}
+                <div id="live-feed" className="lg:col-span-5">
+                  <LiveEventFeed />
+                </div>
+
+                {/* Signal Activity Heatmap */}
+                <div className="lg:col-span-7 panel-glass p-6">
+                  <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Signal Activity Heatmap</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="w-10"></th>
+                          {days.map(d => <th key={d} className="text-center text-muted-foreground font-normal py-1.5">{d}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {signals.map((s, si) => (
+                          <tr key={s}>
+                            <td className="font-mono text-muted-foreground text-[10px] py-1">{s}</td>
+                            {days.map((dayName, di) => {
+                              const val = heatmapData[si][di];
+                              return (
+                                <td key={di} className="p-0.5">
+                                  <div
+                                    className="w-full h-7 rounded-md transition-colors duration-200 flex items-center justify-center cursor-default group relative"
+                                    style={{ background: `hsl(var(--chart-heatmap) / ${Math.min(val / Math.max(agencies.length, 1), 1) * 0.75 + 0.04})` }}
+                                  >
+                                    <span className="text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity text-foreground/70">{val > 0 ? val : ''}</span>
+                                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-card border border-border rounded-md px-2 py-1 text-[10px] text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
+                                      {s} · {dayName}: {val === 0 ? 'No breach' : `${val} ${val === 1 ? 'agency' : 'agencies'} elevated`}
+                                    </div>
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </motion.div>
-          ))}
-        </div>
+            </TabsContent>
 
-        {/* ── Tabbed Dashboard Sections ─────────────────────────── */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList id="tab-bar" className="w-full justify-start bg-muted/50 p-1 rounded-xl mb-5 overflow-x-auto">
-            <TabsTrigger value="overview" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="signals" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
-              Signals
-            </TabsTrigger>
-            <TabsTrigger value="trends" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
-              Trends
-            </TabsTrigger>
-            <TabsTrigger value="map" className="text-xs font-heading tracking-wider data-[state=active]:bg-card data-[state=active]:shadow-sm">
-              Risk Map
-            </TabsTrigger>
-          </TabsList>
+            {/* ── Signals Tab ──────────────────────────────────── */}
+            <TabsContent value="signals" className="space-y-5 mt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Full-width heatmap */}
+                <div className="lg:col-span-12 panel-glass p-6">
+                  <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Signal Activity Heatmap</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="w-10"></th>
+                          {days.map(d => <th key={d} className="text-center text-muted-foreground font-normal py-1.5">{d}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {signals.map((s, si) => (
+                          <tr key={s}>
+                            <td className="font-mono text-muted-foreground text-[10px] py-1">{s}</td>
+                            {days.map((dayName, di) => {
+                              const val = heatmapData[si][di];
+                              const opacity = Math.min(val / 5, 1);
+                              return (
+                                <td key={di} className="p-0.5">
+                                  <div
+                                    className="w-full h-9 rounded-md transition-colors duration-200 flex items-center justify-center cursor-default group relative"
+                                    style={{ background: `hsl(var(--chart-heatmap) / ${opacity * 0.55 + 0.04})` }}
+                                  >
+                                    <span className="text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity text-foreground/70">{val}</span>
+                                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-card border border-border rounded-md px-2 py-1 text-[10px] text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
+                                      {s} · {dayName}: {val} agencies
+                                    </div>
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                {/* Live Event Feed */}
+                <div className="lg:col-span-5">
+                  <LiveEventFeed />
+                </div>
+                {/* Signal breakdown cards */}
+                <div className="lg:col-span-7 panel-glass p-6">
+                  <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">Top Triggered Signals</h3>
+                  <div className="space-y-3">
+                    {signals.slice(0, 5).map((s, i) => {
+                      const total = heatmapData[i].reduce((a, b) => a + b, 0);
+                      const max = Math.max(...signals.map((_, si) => heatmapData[si].reduce((a, b) => a + b, 0)));
+                      return (
+                        <div key={s} className="flex items-center gap-3">
+                          <span className="font-mono text-xs text-muted-foreground w-6">{s}</span>
+                          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'hsl(var(--muted))' }}>
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(total / max) * 100}%` }}
+                              transition={{ delay: i * 0.1, duration: 0.6 }}
+                              className="h-full rounded-full"
+                              style={{ background: 'hsl(var(--accent))' }}
+                            />
+                          </div>
+                          <span className="font-mono text-xs text-foreground font-semibold w-8 text-right">{total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
 
-          {/* ── Overview Tab ──────────────────────────────────── */}
-          <TabsContent value="overview" className="space-y-5 mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Risk Distribution — Donut */}
-              <div id="risk-donut" className="lg:col-span-4 panel-glass p-6">
-                <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Risk Distribution</h3>
-                <div className="flex flex-col items-center">
-                  <div className="relative">
+            {/* ── Trends Tab ──────────────────────────────────── */}
+            <TabsContent value="trends" className="space-y-5 mt-0">
+              {/* Score Timeline */}
+              <div className="panel-glass p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
+                  <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Score Movement Timeline</h3>
+                  <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'hsl(var(--muted))' }}>
+                    {(['24h', '7d', '30d'] as TimeRange[]).map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setTimeRange(r)}
+                        className={`px-3 py-1.5 rounded-md text-[11px] font-medium uppercase tracking-wider transition-all ${timeRange === r
+                          ? 'bg-card text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart data={timelineData}>
+                    <defs>
+                      <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
+                    <XAxis dataKey="date" tick={{ fill: 'hsl(var(--chart-tick))', fontSize: 10 }} axisLine={{ stroke: 'hsl(var(--chart-axis))' }} />
+                    <YAxis domain={[30, 80]} tick={{ fill: 'hsl(var(--chart-tick))', fontSize: 10 }} axisLine={{ stroke: 'hsl(var(--chart-axis))' }} />
+                    <Tooltip content={<ChartTooltipContent />} />
+                    <Area type="monotone" dataKey="avg_score" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#scoreGradient)" dot={false} activeDot={{ r: 4, fill: 'hsl(var(--accent))', stroke: 'hsl(var(--card))', strokeWidth: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Risk Distribution + At-Risk side by side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="panel-glass p-6">
+                  <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Band Distribution</h3>
+                  <div className="flex flex-col items-center">
                     <ResponsiveContainer width={200} height={200}>
                       <PieChart>
                         <Pie data={bandDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value" stroke="none">
@@ -681,305 +894,99 @@ const Dashboard: React.FC = () => {
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="font-mono text-3xl font-bold text-foreground"><AnimatedScore value={totalAgencies} /></span>
-                      <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Total</span>
+                    <div className="grid grid-cols-2 gap-x-5 gap-y-2 mt-4 w-full">
+                      {bandDistribution.map(b => (
+                        <div key={b.name} className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: b.color }} />
+                          <span className="text-xs text-muted-foreground">{b.name}</span>
+                          <span className="font-mono text-xs text-foreground font-semibold ml-auto">{b.value}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-5 gap-y-2 mt-4 w-full">
-                    {bandDistribution.map(b => (
-                      <div key={b.name} className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: b.color }} />
-                        <span className="text-xs text-muted-foreground">{b.name}</span>
-                        <span className="font-mono text-xs text-foreground font-semibold ml-auto">{b.value}</span>
-                      </div>
-                    ))}
+                </div>
+                <div className="panel-glass p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Exposure by Band</h3>
+                    <span className="text-xs font-mono text-muted-foreground">{formatCurrency(totalExposure)} total</span>
+                  </div>
+
+                  {/* Stacked bar overview */}
+                  <div className="flex h-3 rounded-full overflow-hidden mb-5 gap-0.5">
+                    {(['BLOCKED', 'RESTRICTED', 'WARNING', 'CAUTION', 'CLEAR'] as Band[]).map(band => {
+                      const bandExposure = agencies.filter(a => a.band === band).reduce((s, a) => s + a.outstandingBalance, 0);
+                      const pct = totalExposure > 0 ? (bandExposure / totalExposure) * 100 : 0;
+                      if (pct === 0) return null;
+                      return (
+                        <motion.div
+                          key={band}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.8 }}
+                          className="h-full"
+                          style={{ background: getBandColor(band), minWidth: pct > 0 ? 4 : 0 }}
+                          title={`${band}: ${pct.toFixed(1)}%`}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Per-band rows */}
+                  <div className="space-y-2.5">
+                    {(['BLOCKED', 'RESTRICTED', 'WARNING', 'CAUTION', 'CLEAR'] as Band[]).map(band => {
+                      const bandAgencies = agencies.filter(a => a.band === band);
+                      const exposure = bandAgencies.reduce((s, a) => s + a.outstandingBalance, 0);
+                      const pct = totalExposure > 0 ? (exposure / totalExposure) * 100 : 0;
+                      const color = getBandColor(band);
+                      return (
+                        <div key={band} className="rounded-xl p-3 border transition-colors" style={{ borderColor: `${color}25`, background: `${color}08` }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+                              <span className="text-xs font-heading tracking-wider" style={{ color }}>{band}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full border font-mono" style={{ borderColor: `${color}40`, color, background: `${color}15` }}>
+                                {bandAgencies.length} {bandAgencies.length === 1 ? 'agency' : 'agencies'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-muted-foreground font-mono">{pct.toFixed(1)}%</span>
+                              <span className="text-xs font-semibold font-mono text-foreground">{formatCurrency(exposure)}</span>
+                            </div>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `${color}18` }}>
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${pct}%` }}
+                              transition={{ duration: 0.8 }}
+                              className="h-full rounded-full"
+                              style={{ background: color }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
+            </TabsContent>
+            {/* ── Risk Map Tab ─────────────────────────────────── */}
+            <TabsContent value="map" className="mt-0">
+              <RiskMap />
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
 
-              {/* Top 5 At-Risk */}
-              <div id="at-risk-table" className="lg:col-span-8 panel-glass p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Top 5 At-Risk Agencies</h3>
-                  <button onClick={() => navigate('/agencies')} className="flex items-center gap-1 text-[11px] text-accent hover:text-accent/80 transition-colors font-medium uppercase tracking-wider">
-                    View All <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="overflow-x-auto rounded-lg border border-border/50">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="text-muted-foreground bg-secondary/60 sticky top-0 z-10">
-                        <th className="text-left py-3 px-4 font-medium">Agency</th>
-                        <th className="text-center py-3 px-4 font-medium">Score</th>
-                        <th className="text-center py-3 px-4 font-medium">Band</th>
-                        <th className="text-right py-3 px-4 font-medium">Exposure</th>
-                        <th className="text-right py-3 px-4 font-medium">Utilization</th>
-                        <th className="text-center py-3 px-4 font-medium">Trend</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topAtRisk.map((a, idx) => (
-                        <tr key={a.id} className={`border-b border-border/30 cursor-pointer transition-colors hover:bg-accent/[0.04] ${idx % 2 === 1 ? 'bg-secondary/20' : ''}`} onClick={() => navigate(`/agency/${a.id}`)}>
-                          <td className="py-3 px-4">
-                            <div className="flex flex-col">
-                              <span className="text-foreground font-medium">{a.name}</span>
-                              <span className="text-[10px] text-muted-foreground font-mono">{a.id}</span>
-                            </div>
-                          </td>
-                          <td className="text-center px-4 font-mono text-foreground font-semibold">{a.trustScore}</td>
-                          <td className="text-center px-4"><span className={getBandClass(a.band)}>{a.band}</span></td>
-                          <td className="text-right px-4 font-mono text-foreground">{formatCurrency(a.outstandingBalance)}</td>
-                          <td className="text-right px-4">
-                            <div className="inline-flex items-center gap-2">
-                              <div className="w-14 h-1.5 rounded-full overflow-hidden bg-muted">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${a.utilization}%` }}
-                                  transition={{ duration: 0.8, delay: idx * 0.1 }}
-                                  className="h-full rounded-full"
-                                  style={{
-                                    background: a.utilization > 70 ? 'hsl(var(--destructive))' : a.utilization > 50 ? 'hsl(var(--band-warning))' : 'hsl(var(--band-clear))'
-                                  }}
-                                />
-                              </div>
-                              <span className="font-mono text-muted-foreground text-[10px] w-8 text-right">{a.utilization}%</span>
-                            </div>
-                          </td>
-                          <td className="text-center px-4">{a.trustScore < 40 ? <TrendingDown className="w-3.5 h-3.5 text-destructive inline" /> : <TrendingUp className="w-3.5 h-3.5 text-[hsl(var(--band-clear))] inline" />}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Live Event Feed */}
-              <div id="live-feed" className="lg:col-span-5">
-                <LiveEventFeed />
-              </div>
-
-              {/* Signal Activity Heatmap */}
-              <div className="lg:col-span-7 panel-glass p-6">
-                <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Signal Activity Heatmap</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr>
-                        <th className="w-10"></th>
-                        {days.map(d => <th key={d} className="text-center text-muted-foreground font-normal py-1.5">{d}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {signals.map((s, si) => (
-                        <tr key={s}>
-                          <td className="font-mono text-muted-foreground text-[10px] py-1">{s}</td>
-                          {days.map((dayName, di) => {
-                            const val = heatmapData[si][di];
-                            const opacity = Math.min(val / 5, 1);
-                            return (
-                              <td key={di} className="p-0.5">
-                                <div
-                                  className="w-full h-7 rounded-md transition-colors duration-200 flex items-center justify-center cursor-default group relative"
-                                  style={{ background: `hsl(var(--chart-heatmap) / ${opacity * 0.55 + 0.04})` }}
-                                >
-                                  <span className="text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity text-foreground/70">{val}</span>
-                                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-card border border-border rounded-md px-2 py-1 text-[10px] text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
-                                    {s} · {dayName}: {val} agencies
-                                  </div>
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* ── Signals Tab ──────────────────────────────────── */}
-          <TabsContent value="signals" className="space-y-5 mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Full-width heatmap */}
-              <div className="lg:col-span-12 panel-glass p-6">
-                <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Signal Activity Heatmap</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr>
-                        <th className="w-10"></th>
-                        {days.map(d => <th key={d} className="text-center text-muted-foreground font-normal py-1.5">{d}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {signals.map((s, si) => (
-                        <tr key={s}>
-                          <td className="font-mono text-muted-foreground text-[10px] py-1">{s}</td>
-                          {days.map((dayName, di) => {
-                            const val = heatmapData[si][di];
-                            const opacity = Math.min(val / 5, 1);
-                            return (
-                              <td key={di} className="p-0.5">
-                                <div
-                                  className="w-full h-9 rounded-md transition-colors duration-200 flex items-center justify-center cursor-default group relative"
-                                  style={{ background: `hsl(var(--chart-heatmap) / ${opacity * 0.55 + 0.04})` }}
-                                >
-                                  <span className="text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity text-foreground/70">{val}</span>
-                                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-card border border-border rounded-md px-2 py-1 text-[10px] text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg z-10">
-                                    {s} · {dayName}: {val} agencies
-                                  </div>
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              {/* Live Event Feed */}
-              <div className="lg:col-span-5">
-                <LiveEventFeed />
-              </div>
-              {/* Signal breakdown cards */}
-              <div className="lg:col-span-7 panel-glass p-6">
-                <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">Top Triggered Signals</h3>
-                <div className="space-y-3">
-                  {signals.slice(0, 5).map((s, i) => {
-                    const total = heatmapData[i].reduce((a, b) => a + b, 0);
-                    const max = Math.max(...signals.map((_, si) => heatmapData[si].reduce((a, b) => a + b, 0)));
-                    return (
-                      <div key={s} className="flex items-center gap-3">
-                        <span className="font-mono text-xs text-muted-foreground w-6">{s}</span>
-                        <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'hsl(var(--muted))' }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(total / max) * 100}%` }}
-                            transition={{ delay: i * 0.1, duration: 0.6 }}
-                            className="h-full rounded-full"
-                            style={{ background: 'hsl(var(--accent))' }}
-                          />
-                        </div>
-                        <span className="font-mono text-xs text-foreground font-semibold w-8 text-right">{total}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* ── Trends Tab ──────────────────────────────────── */}
-          <TabsContent value="trends" className="space-y-5 mt-0">
-            {/* Score Timeline */}
-            <div className="panel-glass p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
-                <h3 className="font-heading text-sm tracking-wider text-muted-foreground">Score Movement Timeline</h3>
-                <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: 'hsl(var(--muted))' }}>
-                  {(['24h', '7d', '30d'] as TimeRange[]).map(r => (
-                    <button
-                      key={r}
-                      onClick={() => setTimeRange(r)}
-                      className={`px-3 py-1.5 rounded-md text-[11px] font-medium uppercase tracking-wider transition-all ${
-                        timeRange === r
-                          ? 'bg-card text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={scoreHistory}>
-                  <defs>
-                    <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.25} />
-                      <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" />
-                  <XAxis dataKey="date" tick={{ fill: 'hsl(var(--chart-tick))', fontSize: 10 }} axisLine={{ stroke: 'hsl(var(--chart-axis))' }} />
-                  <YAxis domain={[30, 80]} tick={{ fill: 'hsl(var(--chart-tick))', fontSize: 10 }} axisLine={{ stroke: 'hsl(var(--chart-axis))' }} />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Area type="monotone" dataKey="avgScore" stroke="hsl(var(--accent))" strokeWidth={2} fill="url(#scoreGradient)" dot={false} activeDot={{ r: 4, fill: 'hsl(var(--accent))', stroke: 'hsl(var(--card))', strokeWidth: 2 }} />
-                  {scoreHistory.filter(d => d.event).map((d, i) => (
-                    <ReferenceLine key={i} x={d.date} stroke="hsl(var(--destructive) / 0.5)" strokeDasharray="4 4" label={{ value: d.event, position: 'top', fill: 'hsl(var(--chart-tick))', fontSize: 9 }} />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Risk Distribution + At-Risk side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div className="panel-glass p-6">
-                <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-5">Band Distribution</h3>
-                <div className="flex flex-col items-center">
-                  <ResponsiveContainer width={200} height={200}>
-                    <PieChart>
-                      <Pie data={bandDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={3} dataKey="value" stroke="none">
-                        {bandDistribution.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="grid grid-cols-2 gap-x-5 gap-y-2 mt-4 w-full">
-                    {bandDistribution.map(b => (
-                      <div key={b.name} className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: b.color }} />
-                        <span className="text-xs text-muted-foreground">{b.name}</span>
-                        <span className="font-mono text-xs text-foreground font-semibold ml-auto">{b.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="panel-glass p-6">
-                <h3 className="font-heading text-sm tracking-wider text-muted-foreground mb-4">Exposure by Band</h3>
-                <div className="space-y-3">
-                  {(['BLOCKED', 'RESTRICTED', 'WARNING', 'CAUTION', 'CLEAR'] as Band[]).map(band => {
-                    const bandAgencies = agencies.filter(a => a.band === band);
-                    const exposure = bandAgencies.reduce((s, a) => s + a.outstandingBalance, 0);
-                    return (
-                      <div key={band} className="flex items-center gap-3">
-                        <span className={`${getBandClass(band)} w-20 text-center`}>{band}</span>
-                        <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'hsl(var(--muted))' }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(exposure / totalExposure) * 100}%` }}
-                            transition={{ duration: 0.8 }}
-                            className="h-full rounded-full"
-                            style={{ background: getBandColor(band) }}
-                          />
-                        </div>
-                        <span className="font-mono text-xs text-foreground w-16 text-right">{formatCurrency(exposure)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* ── Risk Map Tab ─────────────────────────────────── */}
-          <TabsContent value="map" className="mt-0">
-            <RiskMap />
-          </TabsContent>
-        </Tabs>
-      </div>
       {/* Welcome modal */}
       <AnimatePresence>
-        {showWelcome && !loading && <WelcomeModal onClose={closeWelcome} onStartTour={() => { closeWelcome(); startTour(); }} />}
+        {showWelcome && !isLoading && <WelcomeModal onClose={closeWelcome} onStartTour={() => { closeWelcome(); startTour(); }} />}
       </AnimatePresence>
+
       {/* Walkthrough overlay */}
       <AnimatePresence>
-        {showWalkthrough && !loading && !showWelcome && <Walkthrough onClose={closeWalkthrough} />}
+        {showWalkthrough && !isLoading && !showWelcome && <Walkthrough onClose={closeWalkthrough} />}
       </AnimatePresence>
-    </PageTransition>
+    </PageTransition >
   );
 };
 

@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Monitor, CheckCircle, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command, Wifi, Clock, Rows3, Rows4 } from 'lucide-react';
+import { LayoutDashboard, Building2, Bell, BarChart3, Settings, Shield, Search, User, ChevronLeft, ChevronRight, Menu, X, LogOut, Moon, Sun, Monitor, CheckCircle, Sliders, ClipboardList, FileText, ChevronRight as ChevronR, Command, Wifi, Clock, Rows3, Rows4, Zap, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { alerts, agencies } from '@/data/mockData';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+
 import { useNotifications, useNotificationListener } from '@/hooks/useNotifications';
 import NotificationDrawer from '@/components/NotificationDrawer';
 import { toast } from '@/hooks/use-toast';
 import { useTheme } from '@/hooks/useTheme';
+import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 
 // Live clock hook
 function useLiveClock() {
@@ -20,29 +25,33 @@ function useLiveClock() {
 
 const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, description: 'Command Center overview' },
+  { label: 'API Monitor', path: '/api-monitor', icon: Monitor, description: 'Raw Flight API integration view' },
   { label: 'Agency Directory', path: '/agencies', icon: Building2, description: 'Browse and filter agencies' },
   { label: 'Alerts', path: '/alerts', icon: Bell, badge: true, description: 'Active alerts and escalations' },
   { label: 'Analytics', path: '/analytics', icon: BarChart3, description: 'Charts and trend analysis' },
   { label: 'Simulator', path: '/simulator', icon: Sliders, description: 'Fraud scenario testing' },
   { label: 'Audit Log', path: '/audit-log', icon: ClipboardList, description: 'Decision history trail' },
   { label: 'Reports', path: '/reports', icon: FileText, description: 'Build and export reports' },
+  { label: 'RiskSense Framework', path: '/framework', icon: BookOpen, description: 'Core principles and models' },
   { label: 'Settings', path: '/settings', icon: Settings, description: 'Platform configuration' },
 ];
 
 // Page metadata
 const pageMeta: Record<string, { title: string; description: string; breadcrumbs: { label: string; path?: string }[] }> = {
   '/dashboard': { title: 'Command Center', description: 'Real-time risk monitoring and KPI overview', breadcrumbs: [{ label: 'Dashboard' }] },
+  '/api-monitor': { title: 'API Integrations Monitor', description: 'Live connection status and raw data feed from TBO APIs', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'API Monitor' }] },
   '/agencies': { title: 'Agency Directory', description: 'Browse, filter, and manage agency portfolios', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Agencies' }] },
   '/alerts': { title: 'Alerts Center', description: 'Active alerts, escalations, and acknowledgements', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Alerts' }] },
   '/analytics': { title: 'Analytics', description: 'Portfolio trends, cohort analysis, and risk metrics', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Analytics' }] },
   '/simulator': { title: 'Fraud Scenario Simulator', description: 'Test signal combinations and score impact', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Simulator' }] },
   '/audit-log': { title: 'Audit Log', description: 'Chronological record of all system decisions', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Audit Log' }] },
   '/reports': { title: 'Report Builder', description: 'Generate and export risk assessment reports', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Reports' }] },
+  '/framework': { title: 'RiskSense Framework', description: 'Decision Framework & Reasoning Model', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Framework Explanation' }] },
   '/settings': { title: 'Settings', description: 'Configure thresholds, notifications, and preferences', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Settings' }] },
 };
 
 // Command palette
-const CommandPalette: React.FC<{ open: boolean; onClose: () => void }> = ({ open, onClose }) => {
+const CommandPalette: React.FC<{ open: boolean; onClose: () => void; agencies: any[] }> = ({ open, onClose, agencies }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
 
@@ -137,6 +146,32 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   });
   const { mode: themeMode, setMode: setThemeMode, isDark } = useTheme();
   const clock = useLiveClock();
+  const { agencies, alerts, refetch } = useData();
+  const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: health } = useQuery({
+    queryKey: ['systemHealth'],
+    queryFn: api.getSystemHealth,
+    refetchInterval: 10000,
+  });
+
+  const simulateMutation = useMutation({
+    mutationFn: (agencyId: string) => api.simulateNextAction(agencyId),
+    onSuccess: (data, variables) => {
+      toast({
+        title: 'Action Injected',
+        description: `Backend injected new action. Score updated to ${data.new_trust_score}.`,
+      });
+      // Refresh global context
+      if (refetch) refetch();
+      queryClient.invalidateQueries({ queryKey: ['agencyActions'] });
+      queryClient.invalidateQueries({ queryKey: ['decisions'] });
+    },
+    onError: (err) => {
+      toast({ title: 'Simulation Failed', description: String(err), variant: 'destructive' });
+    }
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle('density-compact', density === 'compact');
@@ -227,11 +262,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 relative group ${
-                active
-                  ? 'bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm border-l-2 border-gold/60'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground border-l-2 border-transparent'
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 relative group ${active
+                ? 'bg-sidebar-accent text-sidebar-primary font-semibold shadow-sm border-l-2 border-gold/60'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground border-l-2 border-transparent'
+                }`}
             >
               <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
               {!collapsed && <span>{item.label}</span>}
@@ -251,7 +285,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <span className="w-2 h-2 rounded-full bg-band-clear pulse-live" />
           {!collapsed && <span className="text-xs text-sidebar-foreground">API: Live</span>}
         </div>
-        {!collapsed && <p className="text-[10px] text-sidebar-foreground/50 px-1">Last sync: 2 min ago</p>}
+        {!collapsed && <p className="text-[10px] text-sidebar-foreground/50 px-1">Last sync: {health?.last_sync_label || '—'}</p>}
         <div className="relative">
           <button
             onClick={() => setThemeMenuOpen(o => !o)}
@@ -275,11 +309,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <button
                   key={opt.value}
                   onClick={() => { setThemeMode(opt.value); setThemeMenuOpen(false); }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition-colors ${
-                    themeMode === opt.value
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-foreground hover:bg-secondary/60'
-                  }`}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition-colors ${themeMode === opt.value
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-foreground hover:bg-secondary/60'
+                    }`}
                 >
                   <opt.icon className="w-4 h-4 flex-shrink-0" />
                   <span>{opt.label}</span>
@@ -290,7 +323,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           )}
         </div>
         <button
-          onClick={() => navigate('/')}
+          onClick={async () => { await signOut(); navigate('/login'); }}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-destructive transition-colors"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
@@ -409,7 +442,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <User className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <div className="hidden md:flex flex-col text-left">
-                    <span className="text-xs text-foreground font-medium">Admin</span>
+                    <span className="text-xs text-foreground font-medium truncate max-w-[100px]">{user?.email?.split('@')[0] || 'User'}</span>
                     <span className="text-[10px] text-muted-foreground">Risk Officer</span>
                   </div>
                 </button>
@@ -420,9 +453,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         <User className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">Admin User</p>
-                        <p className="text-[11px] text-muted-foreground">Risk Officer · Level 3</p>
-                        <p className="text-[10px] text-muted-foreground font-mono">admin@risksense.ai</p>
+                        <p className="text-sm font-semibold text-foreground">{user?.email?.split('@')[0] || 'Admin'}</p>
+                        <p className="text-[11px] text-muted-foreground">Risk Officer</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{user?.email || '—'}</p>
                       </div>
                     </div>
                   </div>
@@ -444,7 +477,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </div>
                   <div className="border-t border-border p-2">
                     <button
-                      onClick={() => { navigate('/'); document.getElementById('profile-dropdown')?.classList.add('hidden'); }}
+                      onClick={async () => { await signOut(); navigate('/login'); document.getElementById('profile-dropdown')?.classList.add('hidden'); }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
@@ -485,18 +518,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {/* Page content with route transition */}
         <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="h-full"
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="h-full"
+          >
+            {children}
+          </motion.div>
         </main>
 
         {/* Status footer */}
@@ -508,7 +539,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
             <div className="flex items-center gap-1.5">
               <Wifi className="w-3 h-3" />
-              <span>API: 42ms</span>
+              <span>API: {health?.latency_ms ?? '—'}ms</span>
             </div>
             <span>Last sync: {clock.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
           </div>
@@ -520,7 +551,64 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </div>
 
       <NotificationDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} agencies={agencies} />
+
+      {/* Manual Action Simulator Widget */}
+      <div className="fixed bottom-12 right-6 z-[100]">
+        <div className="relative group">
+          <button
+            className="w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-2xl flex items-center justify-center hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all outline-none focus:ring-4 focus:ring-primary/20"
+            onClick={() => {
+              const el = document.getElementById('simulator-widget-popup');
+              if (el) el.classList.toggle('hidden');
+            }}
+          >
+            <Zap className="w-5 h-5 fill-current" />
+          </button>
+
+          <div id="simulator-widget-popup" className="hidden absolute bottom-[calc(100%+12px)] right-0 w-80 bg-card border border-border shadow-2xl rounded-xl overflow-hidden origin-bottom-right animate-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:zoom-out-95">
+            <div className="p-4 border-b border-border bg-gradient-to-br from-primary/10 to-transparent">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-primary fill-current" />
+                <h3 className="font-heading text-sm text-foreground tracking-wider">Simulator Widget</h3>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Manually push an agency to its next persona stage. This generates realistic actions, drops scores, and raises alerts naturally.
+              </p>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Target Agency</label>
+                <select
+                  id="simulate-agency-select"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 appearance-none"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select agency to simulate...</option>
+                  {agencies.map(a => (
+                    <option key={a.id} value={a.id}>{a.name} ({a.id}) - {a.band}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={() => {
+                  const select = document.getElementById('simulate-agency-select') as HTMLSelectElement;
+                  if (select && select.value) {
+                    simulateMutation.mutate(select.value);
+                  } else {
+                    toast({ title: 'Select Agency', description: 'Please select an agency first.', variant: 'destructive' });
+                  }
+                }}
+                disabled={simulateMutation.isPending}
+                className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {simulateMutation.isPending ? 'Simulating...' : 'Inject Next Action'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

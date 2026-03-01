@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Sliders, RotateCcw, AlertTriangle, TrendingUp, Save, Share2, Copy, Check, Zap } from 'lucide-react';
+import { Sliders, RotateCcw, TrendingUp, Save, Share2, Copy, Check } from 'lucide-react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HelpCircle, ChevronRight, CheckCircle2, AlertTriangle, ShieldAlert, CreditCard, Activity, ArrowRight, Zap, Play } from 'lucide-react';
 import { PageTransition } from '@/components/AnimatedComponents';
-import { agencies, getBandClass, type Band } from '@/data/mockData';
+import { getBandClass } from '@/lib/utils';
+import { type Band } from '@/lib/constants';
+import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
 const SIGNALS = [
@@ -119,7 +122,6 @@ interface SavedScenario {
 const Simulator: React.FC = () => {
   const [values, setValues] = useState(DEFAULT_VALUES);
   const [tenureDays, setTenureDays] = useState(365);
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [baselineValues, setBaselineValues] = useState<number[] | null>(null);
   const [baselineTenure, setBaselineTenure] = useState<number | null>(null);
   const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>(() => {
@@ -143,25 +145,12 @@ const Simulator: React.FC = () => {
   }));
 
   const updateSignal = useCallback((index: number, val: number) => {
-    setSelectedPreset(null);
     setValues(prev => { const next = [...prev]; next[index] = val; return next; });
   }, []);
-
-  const loadPreset = useCallback((agencyId: string) => {
-    const agency = agencies.find(a => a.id === agencyId);
-    if (!agency) return;
-    // Set current as baseline for comparison
-    setBaselineValues([...values]);
-    setBaselineTenure(tenureDays);
-    setSelectedPreset(agencyId);
-    setTenureDays(agency.tenure);
-    setValues(agency.signals.map(s => s.score));
-  }, [values, tenureDays]);
 
   const resetAll = useCallback(() => {
     setValues(DEFAULT_VALUES);
     setTenureDays(365);
-    setSelectedPreset(null);
     setBaselineValues(null);
     setBaselineTenure(null);
   }, []);
@@ -193,7 +182,6 @@ const Simulator: React.FC = () => {
     setBaselineTenure(tenureDays);
     setValues(s.values);
     setTenureDays(s.tenure);
-    setSelectedPreset(null);
   }, [values, tenureDays]);
 
   const shareUrl = useCallback(() => {
@@ -282,21 +270,6 @@ const Simulator: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Presets */}
-        <div className="panel p-4">
-          <h3 className="font-heading text-xs tracking-wider text-muted-foreground mb-3">Load Agency Preset</h3>
-          <div className="flex flex-wrap gap-2">
-            {agencies.slice(0, 8).map(a => (
-              <button key={a.id} onClick={() => loadPreset(a.id)}
-                className={`text-[11px] px-3 py-1.5 rounded-full border transition-colors ${
-                  selectedPreset === a.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                }`}
-              >
-                {a.name} ({a.trustScore})
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Before/after banner */}
         <AnimatePresence>
@@ -353,9 +326,8 @@ const Simulator: React.FC = () => {
                               {diff > 0 ? '+' : ''}{(diff * 100).toFixed(0)}%
                             </span>
                           )}
-                          <span className={`font-mono text-xs font-semibold ${
-                            values[i] >= 0.7 ? 'text-destructive' : values[i] >= 0.4 ? 'text-[hsl(var(--band-warning))]' : 'text-[hsl(var(--band-clear))]'
-                          }`}>
+                          <span className={`font-mono text-xs font-semibold ${values[i] >= 0.7 ? 'text-destructive' : values[i] >= 0.4 ? 'text-[hsl(var(--band-warning))]' : 'text-[hsl(var(--band-clear))]'
+                            }`}>
                             {(values[i] * 100).toFixed(0)}%
                           </span>
                         </div>
@@ -397,7 +369,7 @@ const Simulator: React.FC = () => {
                 </div>
                 <input
                   type="range" min="1" max="900" value={tenureDays}
-                  onChange={e => { setTenureDays(Number(e.target.value)); setSelectedPreset(null); }}
+                  onChange={e => { setTenureDays(Number(e.target.value)); }}
                   className="w-full h-1.5 bg-secondary rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm"
                 />
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-1">

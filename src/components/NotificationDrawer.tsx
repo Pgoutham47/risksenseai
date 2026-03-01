@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Bell, CheckCheck, Trash2, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
-import { type AlertSeverity } from '@/data/mockData';
+import { type AlertSeverity } from '@/lib/constants';
 
 interface NotificationDrawerProps {
   open: boolean;
@@ -101,9 +101,8 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ open, onClose }
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-sm bg-card border-l border-border shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed top-0 right-0 h-full w-full max-w-sm bg-card border-l border-border shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'
+          }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -150,11 +149,10 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ open, onClose }
             <button
               key={f.value}
               onClick={() => setActiveFilter(f.value)}
-              className={`text-[10px] font-medium px-2 py-1 rounded-full transition-colors ${
-                activeFilter === f.value
+              className={`text-[10px] font-medium px-2 py-1 rounded-full transition-colors ${activeFilter === f.value
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
-              }`}
+                }`}
             >
               {f.label}
             </button>
