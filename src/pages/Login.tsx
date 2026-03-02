@@ -115,9 +115,14 @@ const Login: React.FC = () => {
               {loading ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
-          <div className="mt-6 pt-6 border-t border-border flex items-center gap-2 text-muted-foreground">
-            <Lock className="w-3.5 h-3.5" />
-            <span className="text-xs">Secured by Supabase Auth · 256-bit TLS</span>
+          <div className="mt-6 pt-6 border-t border-border flex items-center justify-between">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Lock className="w-3.5 h-3.5" />
+              <span className="text-xs">Secured by Supabase Auth · 256-bit TLS</span>
+            </div>
+            <button onClick={() => navigate('/')} className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors">
+              ← Back to Home
+            </button>
           </div>
         </motion.div>
       </div>

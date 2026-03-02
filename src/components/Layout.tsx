@@ -568,9 +568,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
           <div id="simulator-widget-popup" className="hidden absolute bottom-[calc(100%+12px)] right-0 w-80 bg-card border border-border shadow-2xl rounded-xl overflow-hidden origin-bottom-right animate-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:zoom-out-95">
             <div className="p-4 border-b border-border bg-gradient-to-br from-primary/10 to-transparent">
-              <div className="flex items-center gap-2 mb-1">
-                <Zap className="w-4 h-4 text-primary fill-current" />
-                <h3 className="font-heading text-sm text-foreground tracking-wider">Simulator Widget</h3>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary fill-current" />
+                  <h3 className="font-heading text-sm text-foreground tracking-wider">Simulator Widget</h3>
+                </div>
+                <button
+                  onClick={() => { const el = document.getElementById('simulator-widget-popup'); if (el) el.classList.add('hidden'); }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Manually push an agency to its next persona stage. This generates realistic actions, drops scores, and raises alerts naturally.

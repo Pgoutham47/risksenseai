@@ -24,11 +24,15 @@ def get_audit_log(
     """
     entries = []
 
+    # Pre-fetch all agency names to avoid N+1 queries
+    all_agencies = db.query(models.Agency.id, models.Agency.name).all()
+    agency_names = {a.id: a.name for a in all_agencies}
+
+
     # ── 1. Decision entries (band changes, credit actions) ──
     decisions_q = db.query(models.Decision).order_by(desc(models.Decision.decided_at)).limit(limit)
     for d in decisions_q:
-        agency = db.query(models.Agency).filter(models.Agency.id == d.agency_id).first()
-        agency_name = agency.name if agency else d.agency_id
+        agency_name = agency_names.get(d.agency_id, d.agency_id)
 
         act = "Band Change" if d.band else "Credit Adjust"
         sev = "high" if d.band in ("BLOCKED", "RESTRICTED") else "medium" if d.band == "WARNING" else "low"
@@ -60,8 +64,7 @@ def get_audit_log(
     # ── 2. Alert entries (acknowledge / escalate) ──
     alerts_q = db.query(models.Alert).order_by(desc(models.Alert.created_at)).limit(limit)
     for a in alerts_q:
-        agency = db.query(models.Agency).filter(models.Agency.id == a.agency_id).first()
-        agency_name = agency.name if agency else a.agency_id
+        agency_name = agency_names.get(a.agency_id, a.agency_id)
 
         if a.is_escalated:
             act = "Escalation"
@@ -91,8 +94,7 @@ def get_audit_log(
     # ── 3. AgencyAction entries ──
     actions_q = db.query(models.AgencyAction).order_by(desc(models.AgencyAction.timestamp)).limit(limit)
     for ac in actions_q:
-        agency = db.query(models.Agency).filter(models.Agency.id == ac.agency_id).first()
-        agency_name = agency.name if agency else ac.agency_id
+        agency_name = agency_names.get(ac.agency_id, ac.agency_id)
 
         act = "Setting Change"
         sev = "low"
