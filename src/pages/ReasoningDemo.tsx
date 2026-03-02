@@ -4,6 +4,7 @@ import {
     ReferenceArea, ReferenceLine, CartesianGrid,
 } from 'recharts';
 import { Shield, Zap, Search, ChevronRight, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { API_BASE } from '@/lib/api';
 import {
     AGENCIES, SYSTEM_PROMPT, SIGNAL_NAMES, SIGNAL_FULL_NAMES,
     INJECT_EVENTS, EVENT_DESCRIPTIONS,
@@ -333,7 +334,7 @@ function LiveInvestigation({ agency }: { agency: AgencyData }) {
         };
 
         try {
-            const resp = await fetch('http://localhost:8000/api/investigate/run', {
+            const resp = await fetch(`${API_BASE}/api/investigate/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

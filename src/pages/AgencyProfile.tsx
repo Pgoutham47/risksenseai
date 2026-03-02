@@ -8,7 +8,7 @@ import { type Band } from '@/lib/constants';
 import { AnimatedScore, SignalGauge, PageTransition } from '@/components/AnimatedComponents';
 import { toast } from '@/hooks/use-toast';
 import { useData } from '@/contexts/DataContext';
-import { api, AgencyActionOut, DecisionOut } from '@/lib/api';
+import { api, API_BASE, AgencyActionOut, DecisionOut } from '@/lib/api';
 
 const bandThresholds = [
   { min: 0, max: 15, band: 'BLOCKED' as Band, color: getBandColor('BLOCKED') },
@@ -212,7 +212,7 @@ const AgencyProfile: React.FC = () => {
 
   const handleConfirmOverride = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/agencies/${agency.id}/override`, {
+      const res = await fetch(`${API_BASE}/agencies/${agency.id}/override`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

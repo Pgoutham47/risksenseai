@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '@/lib/api';
 import { motion } from 'framer-motion';
 import {
     Activity, RefreshCw, Server, AlertCircle,
@@ -24,7 +25,7 @@ const APIMonitor: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('http://localhost:8000/tbo/flight-search');
+            const response = await fetch(`${API_BASE}/tbo/flight-search`);
             if (!response.ok) {
                 throw new Error(`HTTP Error: ${response.status}`);
             }
