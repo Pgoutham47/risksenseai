@@ -496,7 +496,7 @@ const Dashboard: React.FC = () => {
   const { data: kpiSparklines = { agencies: [0, 0, 0, 0, 0, 0, 0], warnings: [0, 0, 0, 0, 0, 0, 0], alerts: [0, 0, 0, 0, 0, 0, 0], exposure: [0, 0, 0, 0, 0, 0, 0] } } = useQuery({
     queryKey: ['kpiSparklines'],
     queryFn: api.getKpiSparklines,
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -515,7 +515,7 @@ const Dashboard: React.FC = () => {
   const { data: scoreHistory = [] } = useQuery({
     queryKey: ['timeline', timeRange, refreshKey],
     queryFn: () => api.getDashboardTimeline(timeRangeDays[timeRange]),
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   const closeWelcome = useCallback(() => {

@@ -66,45 +66,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: rawAgencies = [], isLoading: loadingAgencies, refetch: refetchAgencies } = useQuery({
         queryKey: ['agencies'],
         queryFn: api.getAgencies,
-        refetchInterval: 4000
+        refetchInterval: 30000
     });
 
     const { data: rawAlerts = [], isLoading: loadingAlerts, refetch: refetchAlerts } = useQuery({
         queryKey: ['alerts'],
         queryFn: () => api.getAlerts(),
-        refetchInterval: 4000
+        refetchInterval: 30000
     });
 
     const { data: rawEvents = [], isLoading: loadingEvents, refetch: refetchEvents } = useQuery({
         queryKey: ['liveEvents'],
         queryFn: api.getLiveEvents,
-        refetchInterval: 4000
+        refetchInterval: 30000
     });
 
-    const { data: rawFlightData = null, isLoading: loadingFlight, refetch: refetchFlight } = useQuery({
-        queryKey: ['liveFlightData'],
-        queryFn: api.getTBOFlightSearch
-    });
+
 
     const { data: heatmapData = Array.from({ length: 8 }, () => Array.from({ length: 7 }, () => 0)), isLoading: loadingHeatmap, refetch: refetchHeatmap } = useQuery({
         queryKey: ['heatmap'],
         queryFn: api.getDashboardHeatmap,
-        refetchInterval: 10000,
+        refetchInterval: 60000,
     });
 
     const { data: timelineData = [], isLoading: loadingTimeline, refetch: refetchTimeline } = useQuery({
         queryKey: ['timeline'],
         queryFn: () => api.getDashboardTimeline(30),
-        refetchInterval: 15000,
+        refetchInterval: 60000,
     });
 
     const { data: dashboardStats = null, isLoading: loadingStats, refetch: refetchStats } = useQuery({
         queryKey: ['dashboardStats'],
         queryFn: api.getDashboardStats,
-        refetchInterval: 4000
+        refetchInterval: 30000
     });
 
-    const isLoading = loadingAgencies || loadingAlerts || loadingEvents || loadingHeatmap || loadingTimeline || loadingFlight || loadingStats;
+    const isLoading = loadingAgencies || loadingAlerts || loadingEvents || loadingStats;
 
     const refetch = () => {
         refetchAgencies();
@@ -113,7 +110,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refetchHeatmap();
         refetchTimeline();
         refetchStats();
-        if (refetchFlight) refetchFlight();
     };
 
     const agencies = React.useMemo<UIAgency[]>(() => {
