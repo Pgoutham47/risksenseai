@@ -491,7 +491,7 @@ function LiveInvestigation({ agency }: { agency: AgencyData }) {
                     ) : (
                         <pre className="font-mono text-sm leading-relaxed whitespace-pre-wrap break-words">
                             <span className="text-[#5A7A8A]">
-                                {'> Ready. Select an event and click Run Investigation.\n> The AI will act as the RiskSense Engine and process the event using ' + agency.name + "'s specific weight profile (" + agency.weightProfile.total_observations + " prior observations)."}
+                                {'> Ready. Select an event and click Run Investigation.\n> The AI will act as the RiskSense AI Engine and process the event using ' + agency.name + "'s specific weight profile (" + agency.weightProfile.total_observations + " prior observations)."}
                             </span>
                         </pre>
                     )}

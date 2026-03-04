@@ -12,7 +12,7 @@ class Settings:
     """Application settings loaded from environment variables."""
 
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./risksense.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./risksenseai.db")
 
     # CORS
     CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "http://localhost:8080,http://localhost:5173").split(",")

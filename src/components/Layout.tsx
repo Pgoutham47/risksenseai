@@ -32,7 +32,7 @@ const navItems = [
   { label: 'Simulator', path: '/simulator', icon: Sliders, description: 'Fraud scenario testing' },
   { label: 'Audit Log', path: '/audit-log', icon: ClipboardList, description: 'Decision history trail' },
   { label: 'Reports', path: '/reports', icon: FileText, description: 'Build and export reports' },
-  { label: 'RiskSense Framework', path: '/framework', icon: BookOpen, description: 'Core principles and models' },
+  { label: 'RiskSense AI Framework', path: '/framework', icon: BookOpen, description: 'Core principles and models' },
   { label: 'Settings', path: '/settings', icon: Settings, description: 'Platform configuration' },
 ];
 
@@ -46,7 +46,7 @@ const pageMeta: Record<string, { title: string; description: string; breadcrumbs
   '/simulator': { title: 'Fraud Scenario Simulator', description: 'Test signal combinations and score impact', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Simulator' }] },
   '/audit-log': { title: 'Audit Log', description: 'Chronological record of all system decisions', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Audit Log' }] },
   '/reports': { title: 'Report Builder', description: 'Generate and export risk assessment reports', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Reports' }] },
-  '/framework': { title: 'RiskSense Framework', description: 'Decision Framework & Reasoning Model', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Framework Explanation' }] },
+  '/framework': { title: 'RiskSense AI Framework', description: 'Decision Framework & Reasoning Model', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Framework Explanation' }] },
   '/settings': { title: 'Settings', description: 'Configure thresholds, notifications, and preferences', breadcrumbs: [{ label: 'Dashboard', path: '/dashboard' }, { label: 'Settings' }] },
 };
 
@@ -245,7 +245,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
         {!collapsed && (
           <div className="flex flex-col">
-            <span className="font-heading text-sm text-sidebar-primary tracking-wider">RiskSense</span>
+            <span className="font-heading text-sm text-sidebar-primary tracking-wider">RiskSense AI</span>
             <span className="text-[9px] text-gold-soft font-mono tracking-widest">AI PLATFORM</span>
           </div>
         )}

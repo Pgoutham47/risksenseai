@@ -55,7 +55,7 @@ const Login: React.FC = () => {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <span className="font-heading text-lg text-white tracking-wider">RiskSense</span>
+              <span className="font-heading text-lg text-white tracking-wider">RiskSense AI</span>
               <span className="block text-[10px] text-white/50 font-mono tracking-[0.2em]">AI PLATFORM</span>
             </div>
           </motion.div>

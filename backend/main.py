@@ -20,7 +20,7 @@ from routers import agencies, dashboard, alerts, analytics, tbo, llm, admin, sim
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-logger = logging.getLogger("risksense")
+logger = logging.getLogger("risksenseai")
 
 app = FastAPI(
     title="RiskSense AI API",

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./risksense.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./risksenseai.db")
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
 # Configure engine based on database type

@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">RiskPulse Console</h1>
+  <h1 align="center">RiskSense AI</h1>
   <p align="center">
     <strong>AI-Powered Fraud Detection & Credit Risk Intelligence Platform</strong>
   </p>
@@ -12,7 +12,7 @@
 
 ## Overview
 
-RiskPulse Console is an intelligent risk management platform designed for B2B travel platforms. It continuously monitors travel agency behavior across **8 mathematical risk signals**, calculates personalized **Bayesian Trust Scores**, and applies graduated **3-level containment** (Session → User → Agency) to detect and prevent fraud before it impacts the business.
+RiskSense AI is an intelligent risk management platform designed for B2B travel platforms. It continuously monitors travel agency behavior across **8 mathematical risk signals**, calculates personalized **Bayesian Trust Scores**, and applies graduated **3-level containment** (Session → User → Agency) to detect and prevent fraud before it impacts the business.
 
 ### Key Capabilities
 

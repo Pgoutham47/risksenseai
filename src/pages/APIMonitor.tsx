@@ -141,7 +141,7 @@ const APIMonitor: React.FC = () => {
                                 <Info className="w-4 h-4" /> How it Works
                             </h3>
                             <p className="text-xs text-muted-foreground leading-relaxed">
-                                The TBO UAT search endpoint can take up to 90 seconds to reply. This console uses a 15-second timeout for quick UX. If the server is slow, this monitor will show the fallback simulator payload used to keep the RiskPulse Pipeline functional.
+                                The TBO UAT search endpoint can take up to 90 seconds to reply. This console uses a 15-second timeout for quick UX. If the server is slow, this monitor will show the fallback simulator payload used to keep the RiskSense AI Pipeline functional.
                             </p>
                         </div>
                     </div>

@@ -37,7 +37,7 @@ const Landing: React.FC = () => {
             <Shield className="w-5 h-5" style={{ color: colors.amber }} />
           </div>
           <div>
-            <span style={{ fontFamily: fonts.headline, fontSize: 14, color: colors.white, letterSpacing: '0.08em' }}>RiskSense</span>
+            <span style={{ fontFamily: fonts.headline, fontSize: 14, color: colors.white, letterSpacing: '0.08em' }}>RiskSense AI</span>
             <span className="block" style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted, letterSpacing: '0.2em' }}>AI PLATFORM</span>
           </div>
         </div>

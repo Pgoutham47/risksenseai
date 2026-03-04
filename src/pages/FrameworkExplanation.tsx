@@ -359,7 +359,7 @@ const SignalsTab = () => (
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                     A conventional system asks: "How much does this signal usually matter?"<br />
-                    RiskSense asks: <strong className="text-foreground">"How much has this signal historically mattered for this specific agency?"</strong>
+                    RiskSense AI asks: <strong className="text-foreground">"How much has this signal historically mattered for this specific agency?"</strong>
                 </p>
                 <div className="panel p-5 bg-card/60">
                     <p className="text-sm text-foreground/80 mb-3">
